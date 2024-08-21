@@ -29,4 +29,3 @@ func (m Map[K, V]) Remove(k K) (V, bool) {
 func (m Map[K, V]) Len() int {
 	return len(m.inner)
 }
-
