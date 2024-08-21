@@ -51,21 +51,21 @@ func TestLruCache_Push_And_Peek(t *testing.T) {
 	assert.EqualValues(t, 2, cache.Len())
 
 	assert.EqualValues(t, option.Some(tupleKV[string, string]{
-		Key: Key[string]{K: "banana"},
-		Val: Value[string]{V: "yellow"},
+		key: Key[string]{inner: "banana"},
+		val: Value[string]{inner: "yellow"},
 	}), cache.Push("banana", "foo"))
 
 	assert.EqualValues(t, option.Some(tupleKV[string, string]{
-		Key: Key[string]{K: "apple"},
-		Val: Value[string]{V: "red"},
+		key: Key[string]{inner: "apple"},
+		val: Value[string]{inner: "red"},
 	}), cache.Push("apple", "bar"))
 
 	assert_opt_eq(t, cache.Peek("apple"), "bar")
 	assert_opt_eq(t, cache.Peek("banana"), "foo")
 
 	assert.EqualValues(t, option.Some(tupleKV[string, string]{
-		Key: Key[string]{K: "banana"},
-		Val: Value[string]{V: "foo"},
+		key: Key[string]{inner: "banana"},
+		val: Value[string]{inner: "foo"},
 	}), cache.Push("orange", "orange"))
 
 	assert.EqualValues(t, 2, cache.Cap())
