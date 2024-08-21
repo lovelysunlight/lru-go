@@ -35,17 +35,25 @@ type tupleKV[K comparable, V any] struct {
 	Val Value[V]
 }
 
+func (v *tupleKV[K, V]) DeepCopy() *tupleKV[K, V] {
+	return &tupleKV[K, V]{
+		Key: v.Key.DeepCopy(),
+		Val: v.Val.DeepCopy(),
+	}
+}
+
 type lruEntry[K comparable, V any] struct {
-	Key  Key[K]
-	Val  Value[V]
+	Data *tupleKV[K, V]
 	Next *lruEntry[K, V]
 	Prev *lruEntry[K, V]
 }
 
 func newLRUEntry[K comparable, V any](key K, val V) *lruEntry[K, V] {
 	return &lruEntry[K, V]{
-		Key:  Key[K]{K: key},
-		Val:  Value[V]{V: val},
+		Data: &tupleKV[K, V]{
+			Key: Key[K]{K: key},
+			Val: Value[V]{V: val},
+		},
 		Next: nil,
 		Prev: nil,
 	}
@@ -107,7 +115,7 @@ func (c *lruCache[K, V]) Peek(key K) option.Option[V] {
 		return option.None[V]()
 	}
 
-	return option.Some(node.Val.GetDeepCopyV())
+	return option.Some(node.Data.Val.GetDeepCopyV())
 }
 
 func (c *lruCache[K, V]) Get(key K) option.Option[V] {
@@ -115,7 +123,7 @@ func (c *lruCache[K, V]) Get(key K) option.Option[V] {
 		c.detach(node)
 		c.attach(node)
 
-		return option.Some(node.Val.GetDeepCopyV())
+		return option.Some(node.Data.Val.GetDeepCopyV())
 	}
 
 	return option.None[V]()
@@ -129,26 +137,23 @@ func (c *lruCache[K, V]) Pop(key K) option.Option[V] {
 
 	c.detach(oldNode)
 
-	return option.Some(oldNode.Val.V)
+	return option.Some(oldNode.Data.Val.V)
 }
 
 func (c *lruCache[K, V]) capturingPut(key K, val V, capture bool) option.Option[tupleKV[K, V]] {
 	if node, ok := c.index.Get(Key[K]{K: key}); ok {
-		oldVal := node.Val.DeepCopy()
-		node.Val = Value[V]{V: val}
+		oldNodeData := node.Data.DeepCopy()
+		node.Data.Val = Value[V]{V: val}
 
 		c.detach(node)
 		c.attach(node)
 
-		return option.Some(tupleKV[K, V]{
-			Key: node.Key,
-			Val: oldVal,
-		})
+		return option.Some(*oldNodeData)
 	}
 
 	replaced, node := c.replaceOrCreateNode(key, val)
 	c.attach(node)
-	c.index.Set(node.Key, node)
+	c.index.Set(node.Data.Key, node)
 
 	return replaced.Filter(func(_ tupleKV[K, V]) bool {
 		return capture
@@ -157,7 +162,7 @@ func (c *lruCache[K, V]) capturingPut(key K, val V, capture bool) option.Option[
 
 func (c *lruCache[K, V]) replaceOrCreateNode(key K, val V) (option.Option[tupleKV[K, V]], *lruEntry[K, V]) {
 	if c.Len() == c.Cap() {
-		oldKey := c.tail.Prev.Key
+		oldKey := c.tail.Prev.Data.Key
 		oldNode, _ := c.index.Remove(oldKey)
 		oldKey, oldVal := replace(oldNode, key, val)
 		c.detach(oldNode)
@@ -188,9 +193,9 @@ func (c *lruCache[K, V]) attach(node *lruEntry[K, V]) {
 }
 
 func replace[K comparable, V any](node *lruEntry[K, V], newKey K, newVal V) (Key[K], Value[V]) {
-	oldKey, oldVal := node.Key.DeepCopy(), node.Val.DeepCopy()
-	node.Key = Key[K]{K: newKey}
-	node.Val = Value[V]{V: newVal}
+	oldKey, oldVal := node.Data.Key.DeepCopy(), node.Data.Val.DeepCopy()
+	node.Data.Key = Key[K]{K: newKey}
+	node.Data.Val = Value[V]{V: newVal}
 
 	return oldKey, oldVal
 }
