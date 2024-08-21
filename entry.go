@@ -1,5 +1,35 @@
 package lru
 
+import "github.com/JimChenWYU/lru-go/internal/deepcopy"
+
+type Key[T comparable] struct {
+	inner T
+}
+
+func (v Key[T]) DeepCopy() Key[T] {
+	return Key[T]{
+		inner: deepcopy.Copy(v.inner),
+	}
+}
+
+func (v Key[T]) Get() T {
+	return v.inner
+}
+
+type Value[T any] struct {
+	inner T
+}
+
+func (v Value[T]) DeepCopy() Value[T] {
+	return Value[T]{
+		inner: deepcopy.Copy(v.inner),
+	}
+}
+
+func (v Value[T]) Get() T {
+	return v.inner
+}
+
 type tupleKV[K comparable, V any] struct {
 	key Key[K]
 	val Value[V]
