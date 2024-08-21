@@ -1,6 +1,8 @@
 package lru
 
 import (
+	"sync"
+
 	"github.com/JimChenWYU/lru-go/internal/deepcopy"
 	"github.com/JimChenWYU/lru-go/internal/hashmap"
 	"github.com/JimChenWYU/lru-go/internal/option"
@@ -67,6 +69,7 @@ func newLRUEntrySigil[K comparable, V any]() *lruEntry[K, V] {
 }
 
 type lruCache[K comparable, V any] struct {
+	mux   sync.RWMutex
 	index hashmap.Map[Key[K], *lruEntry[K, V]]
 	cap   int
 
@@ -77,6 +80,7 @@ type lruCache[K comparable, V any] struct {
 func New[K comparable, V any](cap int) *lruCache[K, V] {
 
 	cache := &lruCache[K, V]{
+		mux:   sync.RWMutex{},
 		index: hashmap.New[Key[K], *lruEntry[K, V]](),
 		cap:   cap,
 		head:  newLRUEntrySigil[K, V](),
@@ -90,6 +94,14 @@ func New[K comparable, V any](cap int) *lruCache[K, V] {
 }
 
 func (c *lruCache[K, V]) Len() int {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+
+	return c.len()
+}
+
+// internal use only
+func (c *lruCache[K, V]) len() int {
 	return c.index.Len()
 }
 
@@ -98,6 +110,9 @@ func (c *lruCache[K, V]) Cap() int {
 }
 
 func (c *lruCache[K, V]) Put(key K, val V) option.Option[V] {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
 	data := c.capturingPut(key, val, false)
 	if data.IsSome() {
 		return option.Some(data.Unwrap().Val.GetDeepCopyV())
@@ -106,10 +121,16 @@ func (c *lruCache[K, V]) Put(key K, val V) option.Option[V] {
 }
 
 func (c *lruCache[K, V]) Push(key K, val V) option.Option[tupleKV[K, V]] {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
 	return c.capturingPut(key, val, true)
 }
 
 func (c *lruCache[K, V]) Peek(key K) option.Option[V] {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+
 	node, ok := c.index.Get(Key[K]{K: key})
 	if !ok {
 		return option.None[V]()
@@ -119,6 +140,9 @@ func (c *lruCache[K, V]) Peek(key K) option.Option[V] {
 }
 
 func (c *lruCache[K, V]) Get(key K) option.Option[V] {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+
 	if node, ok := c.index.Get(Key[K]{K: key}); ok {
 		c.detach(node)
 		c.attach(node)
@@ -130,6 +154,9 @@ func (c *lruCache[K, V]) Get(key K) option.Option[V] {
 }
 
 func (c *lruCache[K, V]) Pop(key K) option.Option[V] {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
 	oldNode, ok := c.index.Remove(Key[K]{K: key})
 	if !ok {
 		return option.None[V]()
@@ -161,7 +188,7 @@ func (c *lruCache[K, V]) capturingPut(key K, val V, capture bool) option.Option[
 }
 
 func (c *lruCache[K, V]) replaceOrCreateNode(key K, val V) (option.Option[tupleKV[K, V]], *lruEntry[K, V]) {
-	if c.Len() == c.Cap() {
+	if c.len() == c.Cap() {
 		oldKey := c.tail.Prev.Data.Key
 		oldNode, _ := c.index.Remove(oldKey)
 		oldKey, oldVal := replace(oldNode, key, val)
