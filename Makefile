@@ -34,24 +34,21 @@ test:
 .PHONY: bench
 # runs benchmarks.
 bench:
-	for d in $(BENCHFOLDER); do \
-		$(GO) test -benchmem -bench . -v -covermode=count -coverprofile=profile.out $$d > benchmark.out; \
-		cat benchmark.out; \
-		if grep -q "^--- FAIL" benchmark.out; then \
-			rm tmp.out; \
-			exit 1; \
-		elif grep -q "build failed" benchmark.out; then \
-			rm tmp.out; \
-			exit 1; \
-		elif grep -q "setup failed" benchmark.out; then \
-			rm tmp.out; \
-			exit 1; \
-		fi; \
-		if [ -f profile.out ]; then \
-			cat profile.out | grep -v "mode:" >> coverage.out; \
-			rm profile.out; \
-		fi; \
-	done
+	$(GO) test -benchmem -bench . -v -coverprofile=profile.out $(BENCHFOLDER) > benchmark.out; \
+	cat benchmark.out; \
+	if grep -q "^--- FAIL" benchmark.out; then \
+		rm benchmark.out; \
+		exit 1; \
+	elif grep -q "build failed" benchmark.out; then \
+		rm benchmark.out; \
+		exit 1; \
+	elif grep -q "setup failed" benchmark.out; then \
+		rm benchmark.out; \
+		exit 1; \
+	fi; \
+	if [ -f profile.out ]; then \
+		rm profile.out; \
+	fi; \
 
 .PHONY: fmt
 # Ensure consistent code formatting.
