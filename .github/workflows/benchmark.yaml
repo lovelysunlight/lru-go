@@ -17,8 +17,6 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         go: ["1.22"]
-        test-tags: ["-benchmem -bench ."]
-        test-floder: ["go list ./... | grep benchmarks"]
         include:
           - os: ubuntu-latest
             go-build: ~/.cache/go-build
@@ -26,8 +24,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       GO111MODULE: on
-      TESTTAGS: ${{ matrix.test-tags }}
-      TESTFOLDER: ${{ matrix.test-floder }}
       GOPROXY: https://proxy.golang.org
     steps:
       - name: Set up Go ${{ matrix.go }}
@@ -51,4 +47,4 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Benchmark
-        run: make test
+        run: make bench
