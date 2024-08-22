@@ -3,12 +3,15 @@ package lru
 import (
 	"sync"
 
+	"github.com/lovelysunlight/lru-go/internal/deepcopy"
 	"github.com/lovelysunlight/lru-go/internal/simplelru"
 )
 
 type Cache[K comparable, V any] struct {
 	mux sync.RWMutex
 	lru *simplelru.LRU[K, V]
+	// `Get`, `Peek` return value is immutable or not, default true.
+	immutable bool
 }
 
 // Values returns a slice of the values in the cache, from oldest to newest.
@@ -32,7 +35,11 @@ func (c *Cache[K, V]) Get(key K) (value V, ok bool) {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	return c.lru.Get(key)
+	value, ok = c.lru.Get(key)
+	if ok && c.immutable {
+		return deepcopy.Copy(value), ok
+	}
+	return value, ok
 }
 
 // Peek returns the key value (or undefined if not found) without updating
@@ -41,7 +48,11 @@ func (c *Cache[K, V]) Peek(key K) (value V, ok bool) {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	return c.lru.Peek(key)
+	value, ok = c.lru.Peek(key)
+	if ok && c.immutable {
+		return deepcopy.Copy(value), ok
+	}
+	return value, ok
 }
 
 // Remove removes the provided key from the cache, returning the value if the
@@ -87,9 +98,26 @@ func (c *Cache[K, V]) Clear() {
 	c.mux.Unlock()
 }
 
-func New[K comparable, V any](size int) (c *Cache[K, V], err error) {
+func WithMutable[K comparable, V any]() func(*Cache[K, V]) {
+	return func(c *Cache[K, V]) {
+		c.immutable = false
+	}
+}
+
+func WithImmutable[K comparable, V any]() func(*Cache[K, V]) {
+	return func(c *Cache[K, V]) {
+		c.immutable = true
+	}
+}
+
+func New[K comparable, V any](size int, opts ...func(*Cache[K, V])) (c *Cache[K, V], err error) {
 	// create a cache with default settings
-	c = &Cache[K, V]{}
+	c = &Cache[K, V]{
+		immutable: false,
+	}
+	for _, f := range opts {
+		f(c)
+	}
 	c.lru, err = simplelru.NewLRU[K, V](size)
 	return
 }

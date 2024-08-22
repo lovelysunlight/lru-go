@@ -18,7 +18,7 @@ func (c *LRU[K, V]) Get(key K) (value V, ok bool) {
 	node, ok := c.items.Get(key)
 	if ok {
 		c.evictList.MoveToFront(node)
-		value = deepcopy.Copy(node.Value)
+		value = node.Value
 	}
 
 	return value, ok
@@ -28,7 +28,7 @@ func (c *LRU[K, V]) Get(key K) (value V, ok bool) {
 func (c *LRU[K, V]) Peek(key K) (value V, ok bool) {
 	node, ok := c.items.Get(key)
 	if ok {
-		value = deepcopy.Copy(node.Value)
+		value = node.Value
 	}
 
 	return value, ok

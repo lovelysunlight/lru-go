@@ -136,6 +136,23 @@ func BenchmarkLruCache_Get(b *testing.B) {
 			cache.Get(1)
 		}
 	})
+
+	b.Run("[]int", func(b *testing.B) {
+		b.Run("immutable", func(b *testing.B) {
+			cache, _ := lru.New(10, lru.WithImmutable[int, []int]())
+			cache.Put(1, []int{1, 2, 3, 4, 5, 6})
+			for i := 0; i < b.N; i++ {
+				cache.Get(1)
+			}
+		})
+		b.Run("mutable", func(b *testing.B) {
+			cache, _ := lru.New(10, lru.WithMutable[int, []int]())
+			cache.Put(1, []int{1, 2, 3, 4, 5, 6})
+			for i := 0; i < b.N; i++ {
+				cache.Get(1)
+			}
+		})
+	})
 }
 
 func BenchmarkLruCache_Peek(b *testing.B) {

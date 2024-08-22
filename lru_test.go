@@ -184,3 +184,93 @@ func TestCache_Clear(t *testing.T) {
 	cache.Clear()
 	assert.EqualValues(t, 0, cache.Len())
 }
+
+func TestCache_mutable(t *testing.T) {
+	t.Run("map", func(t *testing.T) {
+		cache, _ := New(2, WithMutable[string, map[string]string]())
+		cache.Put("a", map[string]string{
+			"a": "a",
+		})
+
+		v, _ := cache.Peek("a")
+		assert.EqualValues(t, map[string]string{
+			"a": "a",
+		}, v)
+		v["a"] = "b"
+
+		v, _ = cache.Peek("a")
+		assert.EqualValues(t, map[string]string{
+			"a": "b",
+		}, v)
+	})
+	t.Run("slice", func(t *testing.T) {
+		cache, _ := New(2, WithMutable[string, []int]())
+		cache.Put("a", []int{1, 2, 3})
+
+		v, _ := cache.Peek("a")
+		assert.EqualValues(t, []int{1, 2, 3}, v)
+		v[0] = 4
+
+		v, _ = cache.Peek("a")
+		assert.EqualValues(t, []int{4, 2, 3}, v)
+	})
+	t.Run("object", func(t *testing.T) {
+		type TestCase struct {
+			Name string
+		}
+		cache, _ := New(2, WithMutable[string, *TestCase]())
+		cache.Put("a", &TestCase{Name: "a"})
+
+		v, _ := cache.Peek("a")
+		assert.EqualValues(t, &TestCase{Name: "a"}, v)
+		v.Name = "b"
+
+		v, _ = cache.Peek("a")
+		assert.EqualValues(t, &TestCase{Name: "b"}, v)
+	})
+}
+
+func TestCache_immutable(t *testing.T) {
+	t.Run("map", func(t *testing.T) {
+		cache, _ := New[string, map[string]string](2, WithImmutable[string, map[string]string]())
+		cache.Put("a", map[string]string{
+			"a": "a",
+		})
+
+		v, _ := cache.Peek("a")
+		assert.EqualValues(t, map[string]string{
+			"a": "a",
+		}, v)
+		v["a"] = "b"
+
+		v, _ = cache.Peek("a")
+		assert.EqualValues(t, map[string]string{
+			"a": "a",
+		}, v)
+	})
+	t.Run("slice", func(t *testing.T) {
+		cache, _ := New[string, []int](2, WithImmutable[string, []int]())
+		cache.Put("a", []int{1, 2, 3})
+
+		v, _ := cache.Peek("a")
+		assert.EqualValues(t, []int{1, 2, 3}, v)
+		v[0] = 4
+
+		v, _ = cache.Peek("a")
+		assert.EqualValues(t, []int{1, 2, 3}, v)
+	})
+	t.Run("object", func(t *testing.T) {
+		type TestCase struct {
+			Name string
+		}
+		cache, _ := New[string, *TestCase](2, WithImmutable[string, *TestCase]())
+		cache.Put("a", &TestCase{Name: "a"})
+
+		v, _ := cache.Peek("a")
+		assert.EqualValues(t, &TestCase{Name: "a"}, v)
+		v.Name = "b"
+
+		v, _ = cache.Peek("a")
+		assert.EqualValues(t, &TestCase{Name: "a"}, v)
+	})
+}
