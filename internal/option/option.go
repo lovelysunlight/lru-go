@@ -38,10 +38,3 @@ func (o Option[T]) Filter(predicate func(T) bool) Option[T] {
 	}
 	return None[T]()
 }
-
-func Match[T, R any](o Option[T], predicate func(T) any, other func() any) any {
-	if o.IsSome() {
-		return predicate(o.data)
-	}
-	return other()
-}
