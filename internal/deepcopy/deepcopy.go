@@ -18,6 +18,8 @@ func Iface(iface interface{}) interface{} {
 // Copy creates a deep copy of whatever is passed to it and returns the copy
 // in an interface{}.  The returned value will need to be asserted to the
 // correct type.
+//
+//go:inline
 func Copy[T any](src T) T {
 	var empty T
 	if reflect.DeepEqual(src, empty) {
@@ -27,6 +29,11 @@ func Copy[T any](src T) T {
 	// Make the interface a reflect.Value
 	original := reflect.ValueOf(src)
 
+	// If it's a basic type, we don't need to do anything special.
+	if isBasicType(original.Kind()) {
+		return src
+	}
+
 	// Make a copy of the same type as the original.
 	cpy := reflect.New(original.Type()).Elem()
 
@@ -35,6 +42,22 @@ func Copy[T any](src T) T {
 
 	// Return the copy as an interface.
 	return cpy.Interface().(T)
+}
+
+func isBasicType(kind reflect.Kind) bool {
+	switch kind {
+	case reflect.Bool:
+		fallthrough
+	case reflect.String:
+		fallthrough
+	case reflect.Float32, reflect.Float64:
+		fallthrough
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return true
+	default:
+		return false
+	}
 }
 
 // copyRecursive does the actual copying of the interface. It currently has
