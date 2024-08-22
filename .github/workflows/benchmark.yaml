@@ -17,7 +17,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         go: ["1.22"]
-        test-tags: ["-benchmem", "-bench ."]
+        test-tags: ["-benchmem -bench ."]
         test-floder: ["go list ./... | grep benchmarks"]
         include:
           - os: ubuntu-latest
