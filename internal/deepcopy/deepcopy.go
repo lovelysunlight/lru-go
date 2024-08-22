@@ -6,8 +6,8 @@ import (
 )
 
 // Interface for delegating copy process to type
-type Interface interface {
-	DeepCopy() interface{}
+type Interface[T any] interface {
+	DeepCopy() T
 }
 
 // Iface is an alias to Copy; this exists for backwards compatibility reasons.
@@ -30,7 +30,7 @@ func Copy[T any](src T) T {
 	original := reflect.ValueOf(src)
 
 	// If it's a basic type, we don't need to do anything special.
-	if isBasicType(original.Kind()) {
+	if isBasicType[T](&original) {
 		return src
 	}
 
@@ -38,14 +38,21 @@ func Copy[T any](src T) T {
 	cpy := reflect.New(original.Type()).Elem()
 
 	// Recursively copy the original.
-	copyRecursive(original, cpy)
+	copyRecursive[T](original, cpy)
 
 	// Return the copy as an interface.
 	return cpy.Interface().(T)
 }
 
-func isBasicType(kind reflect.Kind) bool {
-	switch kind {
+func isBasicType[T any](cpy *reflect.Value) bool {
+	// check for implement deepcopy.Interface
+	if cpy.CanInterface() {
+		if _, ok := cpy.Interface().(Interface[T]); ok {
+			return false
+		}
+	}
+
+	switch cpy.Kind() {
 	case reflect.Bool:
 		fallthrough
 	case reflect.String:
@@ -62,10 +69,10 @@ func isBasicType(kind reflect.Kind) bool {
 
 // copyRecursive does the actual copying of the interface. It currently has
 // limited support for what it can handle. Add as needed.
-func copyRecursive(original, cpy reflect.Value) {
+func copyRecursive[T any](original, cpy reflect.Value) {
 	// check for implement deepcopy.Interface
 	if original.CanInterface() {
-		if copier, ok := original.Interface().(Interface); ok {
+		if copier, ok := original.Interface().(Interface[T]); ok {
 			cpy.Set(reflect.ValueOf(copier.DeepCopy()))
 			return
 		}
@@ -82,7 +89,7 @@ func copyRecursive(original, cpy reflect.Value) {
 			return
 		}
 		cpy.Set(reflect.New(originalValue.Type()))
-		copyRecursive(originalValue, cpy.Elem())
+		copyRecursive[T](originalValue, cpy.Elem())
 
 	case reflect.Interface:
 		// If this is a nil, don't do anything
@@ -94,7 +101,7 @@ func copyRecursive(original, cpy reflect.Value) {
 
 		// Get the value by calling Elem().
 		copyValue := reflect.New(originalValue.Type()).Elem()
-		copyRecursive(originalValue, copyValue)
+		copyRecursive[T](originalValue, copyValue)
 		cpy.Set(copyValue)
 
 	case reflect.Struct:
@@ -113,7 +120,7 @@ func copyRecursive(original, cpy reflect.Value) {
 		// Make a new slice and copy each element.
 		cpy.Set(reflect.MakeSlice(original.Type(), original.Len(), original.Cap()))
 		for i := 0; i < original.Len(); i++ {
-			copyRecursive(original.Index(i), cpy.Index(i))
+			copyRecursive[T](original.Index(i), cpy.Index(i))
 		}
 
 	case reflect.Map:
@@ -124,7 +131,7 @@ func copyRecursive(original, cpy reflect.Value) {
 		for _, key := range original.MapKeys() {
 			originalValue := original.MapIndex(key)
 			copyValue := reflect.New(originalValue.Type()).Elem()
-			copyRecursive(originalValue, copyValue)
+			copyRecursive[T](originalValue, copyValue)
 			copyKey := Copy(key.Interface())
 			cpy.SetMapIndex(reflect.ValueOf(copyKey), copyValue)
 		}

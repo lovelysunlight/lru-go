@@ -2,6 +2,7 @@ package simplelru
 
 import (
 	"testing"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -128,6 +129,24 @@ func TestLRU_Put(t *testing.T) {
 
 	_, ok = l.Put(2, 2)
 	assert.False(t, ok)
+
+	t.Run("check address", func(t *testing.T) {
+		type testCase struct {
+			key string
+		}
+		l, _ := NewLRU[int, *testCase](1)
+		insert := &testCase{"a"}
+		l.Put(1, insert)
+		got, _ := l.Peek(1)
+		assert.EqualValues(t, &testCase{"a"}, got)
+
+		evict, _ := l.Put(1, &testCase{"b"})
+		assert.EqualValues(t, unsafe.Pointer(insert), unsafe.Pointer(evict))
+		assert.EqualValues(t, &testCase{"a"}, evict)
+
+		got, _ = l.Peek(1)
+		assert.EqualValues(t, &testCase{"b"}, got)
+	})
 }
 
 // Test that Peek doesn't update recent-ness

@@ -108,8 +108,10 @@ func (c *LRU[K, V]) capturingPut(key K, val V, capture bool) (K, V, bool) {
 	)
 
 	if node, ok := c.items.Get(key); ok {
-		c.items.Set(key, c.evictList.PushFront(key, val))
-		return node.Key, node.Value, true
+		oldVal := node.Value
+		node.Value = val
+		c.evictList.MoveToFront(node)
+		return key, oldVal, true
 	}
 
 	var ok bool

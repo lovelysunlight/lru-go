@@ -101,3 +101,18 @@ func TestCopy(t *testing.T) {
 		})
 	}
 }
+
+type MyInt int
+
+func (m MyInt) DeepCopy() MyInt {
+	return MyInt(123456789)
+}
+
+var _ Interface[MyInt] = (*MyInt)(nil)
+
+func TestDeepCopyInterface(t *testing.T) {
+	assert.EqualValues(t, 1, Copy(1))
+
+	data := MyInt(10)
+	assert.EqualValues(t, MyInt(123456789), Copy(data))
+}
