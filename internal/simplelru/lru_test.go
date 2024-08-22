@@ -188,3 +188,16 @@ func TestLRU_PeekOldest(t *testing.T) {
 		assert.EqualValues(t, 1, v)
 	}
 }
+
+func TestLRU_Keys_Values(t *testing.T) {
+	l, err := NewLRU[int, int](3)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	l.Put(1, 10)
+	l.Put(2, 20)
+	l.Put(3, 30)
+
+	assert.EqualValues(t, []int{1, 2, 3}, l.Keys())
+	assert.EqualValues(t, []int{10, 20, 30}, l.Values())
+}

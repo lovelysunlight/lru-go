@@ -97,6 +97,28 @@ func (c *LRU[K, V]) RemoveOldest() (key K, value V, ok bool) {
 	return
 }
 
+// Keys returns a slice of the keys in the cache, from oldest to newest.
+func (c *LRU[K, V]) Keys() []K {
+	keys := make([]K, c.evictList.Length())
+	i := 0
+	for ent := c.evictList.Back(); ent != nil; ent = ent.PrevEntry() {
+		keys[i] = ent.Key
+		i++
+	}
+	return keys
+}
+
+// Values returns a slice of the values in the cache, from oldest to newest.
+func (c *LRU[K, V]) Values() []V {
+	values := make([]V, c.evictList.Length())
+	i := 0
+	for ent := c.evictList.Back(); ent != nil; ent = ent.PrevEntry() {
+		values[i] = ent.Value
+		i++
+	}
+	return values
+}
+
 // Clears all cache entries.
 func (c *LRU[K, V]) Clear() {
 	c.evictList.Init()

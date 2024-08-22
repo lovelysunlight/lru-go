@@ -243,10 +243,30 @@ func TestCache_immutable(t *testing.T) {
 		}, v)
 		v["a"] = "b"
 
+		v, _ = cache.Get("a")
+		assert.EqualValues(t, map[string]string{
+			"a": "a",
+		}, v)
+
 		v, _ = cache.Peek("a")
 		assert.EqualValues(t, map[string]string{
 			"a": "a",
 		}, v)
+
+		_, v, _ = cache.PeekOldest()
+		assert.EqualValues(t, map[string]string{
+			"a": "a",
+		}, v)
+
+		ks := cache.Keys()
+		assert.EqualValues(t, []string{"a"}, ks)
+
+		vs := cache.Values()
+		assert.EqualValues(t, []map[string]string{
+			{
+				"a": "a",
+			},
+		}, vs)
 	})
 	t.Run("slice", func(t *testing.T) {
 		cache, _ := New[string, []int](2, WithImmutable())
@@ -256,8 +276,20 @@ func TestCache_immutable(t *testing.T) {
 		assert.EqualValues(t, []int{1, 2, 3}, v)
 		v[0] = 4
 
+		v, _ = cache.Get("a")
+		assert.EqualValues(t, []int{1, 2, 3}, v)
+
 		v, _ = cache.Peek("a")
 		assert.EqualValues(t, []int{1, 2, 3}, v)
+
+		_, v, _ = cache.PeekOldest()
+		assert.EqualValues(t, []int{1, 2, 3}, v)
+
+		ks := cache.Keys()
+		assert.EqualValues(t, []string{"a"}, ks)
+
+		vs := cache.Values()
+		assert.EqualValues(t, [][]int{{1, 2, 3}}, vs)
 	})
 	t.Run("object", func(t *testing.T) {
 		type TestCase struct {
@@ -270,8 +302,20 @@ func TestCache_immutable(t *testing.T) {
 		assert.EqualValues(t, &TestCase{Name: "a"}, v)
 		v.Name = "b"
 
+		v, _ = cache.Get("a")
+		assert.EqualValues(t, &TestCase{Name: "a"}, v)
+
 		v, _ = cache.Peek("a")
 		assert.EqualValues(t, &TestCase{Name: "a"}, v)
+
+		_, v, _ = cache.PeekOldest()
+		assert.EqualValues(t, &TestCase{Name: "a"}, v)
+
+		ks := cache.Keys()
+		assert.EqualValues(t, []string{"a"}, ks)
+
+		vs := cache.Values()
+		assert.EqualValues(t, []*TestCase{{Name: "a"}}, vs)
 	})
 }
 
@@ -294,4 +338,17 @@ func TestCache_PeekOldest(t *testing.T) {
 		assert.True(t, ok)
 		assert.EqualValues(t, 1, v)
 	}
+}
+
+func TestCache_Keys_Values(t *testing.T) {
+	l, err := New[int, int](3)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	l.Put(1, 10)
+	l.Put(2, 20)
+	l.Put(3, 30)
+
+	assert.EqualValues(t, []int{1, 2, 3}, l.Keys())
+	assert.EqualValues(t, []int{10, 20, 30}, l.Values())
 }

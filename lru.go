@@ -103,6 +103,34 @@ func (c *Cache[K, V]) RemoveOldest() (key K, value V, ok bool) {
 	return c.lru.RemoveOldest()
 }
 
+// Keys returns a slice of the keys in the cache, from oldest to newest.
+func (c *Cache[K, V]) Keys() []K {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+
+	items := c.lru.Keys()
+	if c.immutable {
+		for i, v := range items {
+			items[i] = deepcopy.Copy(v)
+		}
+	}
+	return items
+}
+
+// Values returns a slice of the values in the cache, from oldest to newest.
+func (c *Cache[K, V]) Values() []V {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+
+	items := c.lru.Values()
+	if c.immutable {
+		for i, v := range items {
+			items[i] = deepcopy.Copy(v)
+		}
+	}
+	return items
+}
+
 // Clears all cache entries.
 func (c *Cache[K, V]) Clear() {
 	c.mux.Lock()
