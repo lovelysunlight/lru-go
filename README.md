@@ -41,5 +41,6 @@ func main() {
 [build status]: https://github.com/lovelysunlight/lru-go/actions/workflows/ci.yaml
 [codecov badge]: https://codecov.io/gh/lovelysunlight/lru-go/branch/master/graph/badge.svg
 [coverage status]: https://codecov.io/gh/lovelysunlight/lru-go
+[license badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [license]: https://raw.githubusercontent.com/lovelysunlight/lru-go/master/LICENSE
 [LRU Cache implementation in a Rust crate]: https://github.com/jeromefroe/lru-rs
