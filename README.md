@@ -1,6 +1,7 @@
 # LRU Cache
 
 [![Build Badge]][build status]
+[![Benchmark Badge]][benchmark status]
 [![Codecov Badge]][coverage status]
 [![License Badge]][license]
 
@@ -60,9 +61,11 @@ func main() {
 ```
 
 [build badge]: https://github.com/lovelysunlight/lru-go/actions/workflows/ci.yaml/badge.svg
+[benchmark badge]: https://github.com/lovelysunlight/lru-go/actions/workflows/benchmark.yaml/badge.svg
 [build status]: https://github.com/lovelysunlight/lru-go/actions/workflows/ci.yaml
 [codecov badge]: https://codecov.io/gh/lovelysunlight/lru-go/branch/master/graph/badge.svg
 [coverage status]: https://codecov.io/gh/lovelysunlight/lru-go
+[benchmark status]: https://lovelysunlight.github.io/lru-go/dev/bench/
 [license badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [license]: https://raw.githubusercontent.com/lovelysunlight/lru-go/master/LICENSE
 [LRU Cache implementation in a Rust crate]: https://github.com/jeromefroe/lru-rs
