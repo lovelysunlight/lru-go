@@ -167,3 +167,24 @@ func TestLRU_Peek(t *testing.T) {
 		t.Errorf("should not have updated recent-ness of 1")
 	}
 }
+
+func TestLRU_PeekOldest(t *testing.T) {
+	l, err := NewLRU[int, int](3)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	var (
+		k, v int
+		ok   bool
+	)
+	l.Put(1, 1)
+	l.Put(2, 2)
+	l.Put(3, 3)
+
+	for i := 0; i < 2; i++ {
+		k, v, ok = l.PeekOldest()
+		_ = k
+		assert.True(t, ok)
+		assert.EqualValues(t, 1, v)
+	}
+}

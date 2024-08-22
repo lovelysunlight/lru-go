@@ -33,6 +33,14 @@ func (c *LRU[K, V]) Peek(key K) (value V, ok bool) {
 	return value, ok
 }
 
+// Returns the oldest entry without updating the "recently used"-ness of the key.
+func (c *LRU[K, V]) PeekOldest() (key K, value V, ok bool) {
+	if ent := c.evictList.Back(); ent != nil {
+		return ent.Key, ent.Value, true
+	}
+	return
+}
+
 // Pop implements LRUCache.
 func (c *LRU[K, V]) Pop(key K) (value V, ok bool) {
 	oldNode, ok := c.items.Remove(key)

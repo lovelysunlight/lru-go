@@ -23,6 +23,9 @@ type LRUCache[K comparable, V any] interface {
 	// Removes the oldest entry from cache.
 	RemoveOldest() (K, V, bool)
 
+	// Returns the oldest entry without updating the "recently used"-ness of the key.
+	PeekOldest() (K, V, bool)
+
 	// Clears all cache entries.
 	Clear()
 

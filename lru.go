@@ -55,6 +55,18 @@ func (c *Cache[K, V]) Peek(key K) (value V, ok bool) {
 	return value, ok
 }
 
+// Returns the oldest entry without updating the "recently used"-ness of the key.
+func (c *Cache[K, V]) PeekOldest() (key K, value V, ok bool) {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+
+	key, value, ok = c.lru.PeekOldest()
+	if ok && c.immutable {
+		return deepcopy.Copy(key), deepcopy.Copy(value), ok
+	}
+	return key, value, ok
+}
+
 // Remove removes the provided key from the cache, returning the value if the
 // key was contained.
 func (c *Cache[K, V]) Pop(key K) (value V, ok bool) {
