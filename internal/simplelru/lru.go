@@ -3,7 +3,6 @@ package simplelru
 import (
 	"errors"
 
-	"github.com/lovelysunlight/lru-go/internal/deepcopy"
 	"github.com/lovelysunlight/lru-go/internal/hashmap"
 )
 
@@ -109,11 +108,8 @@ func (c *LRU[K, V]) capturingPut(key K, val V, capture bool) (K, V, bool) {
 	)
 
 	if node, ok := c.items.Get(key); ok {
-		oldKey, oldVal = deepcopy.Copy(node.Key), deepcopy.Copy(node.Value)
-		node.Value = val
-		c.evictList.MoveToFront(node)
-
-		return oldKey, oldVal, true
+		c.items.Set(key, c.evictList.PushFront(key, val))
+		return node.Key, node.Value, true
 	}
 
 	var ok bool

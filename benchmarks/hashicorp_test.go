@@ -3,11 +3,11 @@ package benchmarks
 import (
 	"testing"
 
-	"github.com/lovelysunlight/lru-go"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/pioz/faker"
 )
 
-func BenchmarkLRU_Rand(b *testing.B) {
+func BenchmarkHashicorpLRU_Rand(b *testing.B) {
 	l, err := lru.New[int64, int64](8192)
 	if err != nil {
 		b.Fatalf("err: %v", err)
@@ -17,11 +17,13 @@ func BenchmarkLRU_Rand(b *testing.B) {
 	for i := 0; i < b.N*2; i++ {
 		trace[i] = faker.Int64() % 32768
 	}
+
 	b.ResetTimer()
+
 	var hit, miss int
 	for i := 0; i < 2*b.N; i++ {
 		if i%2 == 0 {
-			l.Put(trace[i], trace[i])
+			l.Add(trace[i], trace[i])
 		} else {
 			if _, ok := l.Get(trace[i]); ok {
 				hit++
@@ -33,7 +35,7 @@ func BenchmarkLRU_Rand(b *testing.B) {
 	b.Logf("hit: %d miss: %d ratio: %f", hit, miss, float64(hit)/float64(hit+miss))
 }
 
-func BenchmarkLRU_Freq(b *testing.B) {
+func BenchmarkHashicorpLRU_Freq(b *testing.B) {
 	l, err := lru.New[int64, int64](8192)
 	if err != nil {
 		b.Fatalf("err: %v", err)
@@ -51,7 +53,7 @@ func BenchmarkLRU_Freq(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		l.Put(trace[i], trace[i])
+		l.Add(trace[i], trace[i])
 	}
 	var hit, miss int
 	for i := 0; i < b.N; i++ {
