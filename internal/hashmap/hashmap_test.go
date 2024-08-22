@@ -57,3 +57,14 @@ func TestMap_Remove(t *testing.T) {
 	assert.False(t, exists)
 	assert.EqualValues(t, "", got)
 }
+
+func TestMap_Clear(t *testing.T) {
+	m := New[string, string]()
+	m.Set("a", "aa")
+	m.Set("b", "bb")
+
+	assert.EqualValues(t, 2, m.Len())
+
+	m.Clear()
+	assert.EqualValues(t, 0, m.Len())
+}

@@ -3,159 +3,95 @@ package lru
 import (
 	"sync"
 
-	"github.com/lovelysunlight/lru-go/internal/hashmap"
-	"github.com/lovelysunlight/lru-go/internal/option"
-	"github.com/lovelysunlight/lru-go/internal/pack"
+	"github.com/lovelysunlight/lru-go/internal/simplelru"
 )
 
-type lruCache[K comparable, V any] struct {
-	mux   sync.RWMutex
-	index hashmap.Map[pack.Key[K], *lruEntry[K, V]]
-	cap   int
-
-	head *lruEntry[K, V]
-	tail *lruEntry[K, V]
+type Cache[K comparable, V any] struct {
+	mux sync.RWMutex
+	lru *simplelru.LRU[K, V]
 }
 
-func New[K comparable, V any](cap int) *lruCache[K, V] {
-
-	cache := &lruCache[K, V]{
-		mux:   sync.RWMutex{},
-		index: hashmap.New[pack.Key[K], *lruEntry[K, V]](),
-		cap:   cap,
-		head:  newLRUEntrySigil[K, V](),
-		tail:  newLRUEntrySigil[K, V](),
-	}
-
-	cache.head.next = cache.tail
-	cache.tail.prev = cache.head
-
-	return cache
-}
-
-func (c *lruCache[K, V]) Len() int {
+// Values returns a slice of the values in the cache, from oldest to newest.
+func (c *Cache[K, V]) Cap() int {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	return c.len()
+	return c.lru.Cap()
 }
 
-// internal use only
-func (c *lruCache[K, V]) len() int {
-	return c.index.Len()
-}
-
-func (c *lruCache[K, V]) Cap() int {
-	return c.cap
-}
-
-func (c *lruCache[K, V]) Put(key K, val V) option.Option[V] {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-
-	data := c.capturingPut(key, val, false)
-	if data.IsSome() {
-		return option.Some(data.Unwrap().GetVal().Unpack())
-	}
-	return option.None[V]()
-}
-
-func (c *lruCache[K, V]) Push(key K, val V) option.Option[tupleKV[K, V]] {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-
-	return c.capturingPut(key, val, true)
-}
-
-func (c *lruCache[K, V]) Peek(key K) option.Option[V] {
+// Len returns the number of items in the cache.
+func (c *Cache[K, V]) Len() int {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	node, ok := c.index.Get(*newKey(key))
-	if !ok {
-		return option.None[V]()
-	}
-
-	return option.Some(node.GetData().GetVal().DeepCopy().Unpack())
+	return c.lru.Len()
 }
 
-func (c *lruCache[K, V]) Get(key K) option.Option[V] {
+// Get looks up a key's value from the cache.
+func (c *Cache[K, V]) Get(key K) (value V, ok bool) {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	if node, ok := c.index.Get(*newKey(key)); ok {
-		c.detach(node)
-		c.attach(node)
-
-		return option.Some(node.GetData().GetVal().DeepCopy().Unpack())
-	}
-
-	return option.None[V]()
+	return c.lru.Get(key)
 }
 
-func (c *lruCache[K, V]) Pop(key K) option.Option[V] {
+// Peek returns the key value (or undefined if not found) without updating
+// the "recently used"-ness of the key.
+func (c *Cache[K, V]) Peek(key K) (value V, ok bool) {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+
+	return c.lru.Peek(key)
+}
+
+// Remove removes the provided key from the cache, returning the value if the
+// key was contained.
+func (c *Cache[K, V]) Pop(key K) (value V, ok bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	oldNode, ok := c.index.Remove(*newKey(key))
-	if !ok {
-		return option.None[V]()
-	}
-
-	c.detach(oldNode)
-
-	return option.Some(oldNode.GetData().GetVal().Unpack())
+	return c.lru.Pop(key)
 }
 
-func (c *lruCache[K, V]) capturingPut(key K, val V, capture bool) option.Option[tupleKV[K, V]] {
-	if node, ok := c.index.Get(*newKey(key)); ok {
-		oldNodeData := node.data.DeepCopy()
-		node.data.val = newVal(val)
+// Pushes a key-value pair into the cache. If an entry with key `key` already exists in
+// the cache or another cache entry is removed (due to the lru's capacity),
+// then it returns the old entry's key-value pair or not.
+func (c *Cache[K, V]) Push(key K, value V) (oldKey K, oldValue V, ok bool) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
 
-		c.detach(node)
-		c.attach(node)
-
-		return option.Some(oldNodeData)
-	}
-
-	replaced, node := c.replaceOrCreateNode(key, val)
-	c.attach(node)
-	c.index.Set(*node.data.key, node)
-
-	return replaced.Filter(func(_ tupleKV[K, V]) bool {
-		return capture
-	})
+	return c.lru.Push(key, value)
 }
 
-func (c *lruCache[K, V]) replaceOrCreateNode(key K, val V) (option.Option[tupleKV[K, V]], *lruEntry[K, V]) {
-	if c.len() == c.Cap() {
-		oldKey := c.tail.Prev().GetData().GetKey()
-		oldNode, _ := c.index.Remove(*oldKey)
-		oldTupleKV := oldNode.Replace(key, val)
-		c.detach(oldNode)
+// Puts a key-value pair into cache. If the key already exists in the cache, then it updates
+// the key's value and returns the old value or not.
+func (c *Cache[K, V]) Put(key K, value V) (oldValue V, ok bool) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
 
-		return option.Some(oldTupleKV), oldNode
-	}
-
-	return option.None[tupleKV[K, V]](), newLRUEntry(key, val)
+	return c.lru.Put(key, value)
 }
 
-func (c *lruCache[K, V]) detach(node *lruEntry[K, V]) {
-	node.Prev().PushBack(node.Next())
-	node.Next().PushFront(node.Prev())
+// RemoveOldest removes the oldest item from the cache.
+func (c *Cache[K, V]) RemoveOldest() (key K, value V, ok bool) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	return c.lru.RemoveOldest()
 }
 
-func (c *lruCache[K, V]) attach(node *lruEntry[K, V]) {
-	node.PushBack(c.head.Next())
-	node.PushFront(c.head)
-	c.head.PushBack(node)
-	node.Next().PushFront(node)
+// Clears all cache entries.
+func (c *Cache[K, V]) Clear() {
+	c.mux.Lock()
+	c.lru.Clear()
+	c.mux.Unlock()
 }
 
-func newKey[T comparable](v T) *pack.Key[T] {
-	return pack.Pack[T, *pack.Key[T]](v)
+func New[K comparable, V any](size int) (c *Cache[K, V], err error) {
+	// create a cache with default settings
+	c = &Cache[K, V]{}
+	c.lru, err = simplelru.NewLRU[K, V](size)
+	return
 }
 
-func newVal[T any](v T) *pack.Value[T] {
-	return pack.Pack[T, *pack.Value[T]](v)
-}
+var _ simplelru.LRUCache[any, any] = (*Cache[any, any])(nil)
