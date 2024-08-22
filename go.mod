@@ -1,4 +1,4 @@
-module github.com/JimChenWYU/lru-go
+module github.com/lovelysunlight/lru-go
 
 go 1.22
 

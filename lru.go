@@ -3,9 +3,9 @@ package lru
 import (
 	"sync"
 
-	"github.com/JimChenWYU/lru-go/internal/hashmap"
-	"github.com/JimChenWYU/lru-go/internal/option"
-	"github.com/JimChenWYU/lru-go/internal/pack"
+	"github.com/lovelysunlight/lru-go/internal/hashmap"
+	"github.com/lovelysunlight/lru-go/internal/option"
+	"github.com/lovelysunlight/lru-go/internal/pack"
 )
 
 type lruCache[K comparable, V any] struct {

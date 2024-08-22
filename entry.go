@@ -1,6 +1,6 @@
 package lru
 
-import "github.com/JimChenWYU/lru-go/internal/pack"
+import "github.com/lovelysunlight/lru-go/internal/pack"
 
 type tupleKV[K comparable, V any] struct {
 	key *pack.Key[K]

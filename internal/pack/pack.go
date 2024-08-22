@@ -1,7 +1,7 @@
 package pack
 
 import (
-	"github.com/JimChenWYU/lru-go/internal/deepcopy"
+	"github.com/lovelysunlight/lru-go/internal/deepcopy"
 )
 
 type Packable[T any] interface {

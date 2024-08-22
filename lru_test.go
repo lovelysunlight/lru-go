@@ -3,7 +3,7 @@ package lru
 import (
 	"testing"
 
-	"github.com/JimChenWYU/lru-go/internal/option"
+	"github.com/lovelysunlight/lru-go/internal/option"
 	"github.com/stretchr/testify/assert"
 )
 

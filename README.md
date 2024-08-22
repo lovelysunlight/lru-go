@@ -1,5 +1,9 @@
 # LRU Cache
 
+[![Build Badge]][build status]
+[![Codecov Badge]][coverage status]
+[![License Badge]][license]
+
 An implementation of a LRU cache. The cache supports `Put`, `Get` `Peek` and `Pop` operations,
 all of which are O(1). This package was heavily influenced by the [LRU Cache implementation in a Rust crate].
 
@@ -12,7 +16,7 @@ package main
 
 import (
     "fmt"
-    "github.com/JimChenWYU/lru-go"
+    "github.com/lovelysunlight/lru-go"
 )
 
 func main() {
@@ -33,4 +37,9 @@ func main() {
 }
 ```
 
+[build badge]: https://github.com/lovelysunlight/lru-go/actions/workflows/ci.yaml/badge.svg
+[build status]: https://github.com/lovelysunlight/lru-go/actions/workflows/ci.yaml
+[codecov badge]: https://codecov.io/gh/lovelysunlight/lru-go/branch/master/graph/badge.svg
+[coverage status]: https://codecov.io/gh/lovelysunlight/lru-go
+[license]: https://raw.githubusercontent.com/lovelysunlight/lru-go/master/LICENSE
 [LRU Cache implementation in a Rust crate]: https://github.com/jeromefroe/lru-rs
