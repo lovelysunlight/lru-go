@@ -91,6 +91,7 @@ func copyRecursive[T any](original, cpy reflect.Value) {
 		cpy.Set(reflect.New(originalValue.Type()))
 		copyRecursive[T](originalValue, cpy.Elem())
 
+	// uncover
 	case reflect.Interface:
 		// If this is a nil, don't do anything
 		if original.IsNil() {

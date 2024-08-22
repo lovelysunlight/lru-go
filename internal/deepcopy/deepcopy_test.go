@@ -2,15 +2,29 @@ package deepcopy
 
 import (
 	"testing"
+	"time"
 	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+type Namer interface {
+	Name() string
+}
+
 type test struct {
 	name string
 	Age  int
+}
+
+func (t *test) Name() string {
+	return t.name
+}
+
+func TestIface(t *testing.T) {
+	got := Iface(1)
+	assert.EqualValues(t, 1, got)
 }
 
 func TestCopy(t *testing.T) {
@@ -23,6 +37,34 @@ func TestCopy(t *testing.T) {
 		args args
 		want any
 	}{
+		{
+			name: "time.Time",
+			args: args{
+				src: time.Unix(0, 0),
+			},
+			want: time.Unix(0, 0),
+		},
+		{
+			name: "slice nil",
+			args: args{
+				src: ([]int)(nil),
+			},
+			want: ([]int)(nil),
+		},
+		{
+			name: "map nil",
+			args: args{
+				src: (map[int]int)(nil),
+			},
+			want: (map[int]int)(nil),
+		},
+		{
+			name: "object nil",
+			args: args{
+				src: (*test)(nil),
+			},
+			want: (*test)(nil),
+		},
 		{
 			name: "int",
 			args: args{
@@ -59,7 +101,7 @@ func TestCopy(t *testing.T) {
 			want: nil,
 		},
 		{
-			name: "pointer",
+			name: "object pointer",
 			args: args{
 				src: &test{name: "foo"},
 			},
