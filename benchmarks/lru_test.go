@@ -7,7 +7,7 @@ import (
 	"github.com/pioz/faker"
 )
 
-func BenchmarkLRU_Rand(b *testing.B) {
+func BenchmarkCache_Rand(b *testing.B) {
 	l, err := lru.New[int64, int64](8192)
 	if err != nil {
 		b.Fatalf("err: %v", err)
@@ -33,7 +33,7 @@ func BenchmarkLRU_Rand(b *testing.B) {
 	b.Logf("hit: %d miss: %d ratio: %f", hit, miss, float64(hit)/float64(hit+miss))
 }
 
-func BenchmarkLRU_Freq(b *testing.B) {
+func BenchmarkCache_Freq(b *testing.B) {
 	l, err := lru.New[int64, int64](8192)
 	if err != nil {
 		b.Fatalf("err: %v", err)
