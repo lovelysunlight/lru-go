@@ -187,7 +187,7 @@ func TestCache_Clear(t *testing.T) {
 
 func TestCache_mutable(t *testing.T) {
 	t.Run("map", func(t *testing.T) {
-		cache, _ := New(2, WithMutable[string, map[string]string]())
+		cache, _ := New[string, map[string]string](2, WithMutable())
 		cache.Put("a", map[string]string{
 			"a": "a",
 		})
@@ -204,7 +204,7 @@ func TestCache_mutable(t *testing.T) {
 		}, v)
 	})
 	t.Run("slice", func(t *testing.T) {
-		cache, _ := New(2, WithMutable[string, []int]())
+		cache, _ := New[string, []int](2, WithMutable())
 		cache.Put("a", []int{1, 2, 3})
 
 		v, _ := cache.Peek("a")
@@ -218,7 +218,7 @@ func TestCache_mutable(t *testing.T) {
 		type TestCase struct {
 			Name string
 		}
-		cache, _ := New(2, WithMutable[string, *TestCase]())
+		cache, _ := New[string, *TestCase](2, WithMutable())
 		cache.Put("a", &TestCase{Name: "a"})
 
 		v, _ := cache.Peek("a")
@@ -232,7 +232,7 @@ func TestCache_mutable(t *testing.T) {
 
 func TestCache_immutable(t *testing.T) {
 	t.Run("map", func(t *testing.T) {
-		cache, _ := New[string, map[string]string](2, WithImmutable[string, map[string]string]())
+		cache, _ := New[string, map[string]string](2, WithImmutable())
 		cache.Put("a", map[string]string{
 			"a": "a",
 		})
@@ -249,7 +249,7 @@ func TestCache_immutable(t *testing.T) {
 		}, v)
 	})
 	t.Run("slice", func(t *testing.T) {
-		cache, _ := New[string, []int](2, WithImmutable[string, []int]())
+		cache, _ := New[string, []int](2, WithImmutable())
 		cache.Put("a", []int{1, 2, 3})
 
 		v, _ := cache.Peek("a")
@@ -263,7 +263,7 @@ func TestCache_immutable(t *testing.T) {
 		type TestCase struct {
 			Name string
 		}
-		cache, _ := New[string, *TestCase](2, WithImmutable[string, *TestCase]())
+		cache, _ := New[string, *TestCase](2, WithImmutable())
 		cache.Put("a", &TestCase{Name: "a"})
 
 		v, _ := cache.Peek("a")

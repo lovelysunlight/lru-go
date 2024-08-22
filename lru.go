@@ -98,26 +98,32 @@ func (c *Cache[K, V]) Clear() {
 	c.mux.Unlock()
 }
 
-func WithMutable[K comparable, V any]() func(*Cache[K, V]) {
-	return func(c *Cache[K, V]) {
-		c.immutable = false
+type cacheOpts struct {
+	Immutable bool
+}
+
+func WithMutable() func(*cacheOpts) {
+	return func(c *cacheOpts) {
+		c.Immutable = false
 	}
 }
 
-func WithImmutable[K comparable, V any]() func(*Cache[K, V]) {
-	return func(c *Cache[K, V]) {
-		c.immutable = true
+func WithImmutable() func(*cacheOpts) {
+	return func(c *cacheOpts) {
+		c.Immutable = true
 	}
 }
 
-func New[K comparable, V any](size int, opts ...func(*Cache[K, V])) (c *Cache[K, V], err error) {
+func New[K comparable, V any](size int, options ...func(*cacheOpts)) (c *Cache[K, V], err error) {
 	// create a cache with default settings
+	config := &cacheOpts{Immutable: false}
+	for _, f := range options {
+		f(config)
+	}
 	c = &Cache[K, V]{
-		immutable: false,
+		immutable: config.Immutable,
 	}
-	for _, f := range opts {
-		f(c)
-	}
+
 	c.lru, err = simplelru.NewLRU[K, V](size)
 	return
 }
