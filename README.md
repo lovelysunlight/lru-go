@@ -2,6 +2,7 @@
 
 [![Build Badge]][build status]
 [![Benchmark Badge]][benchmark status]
+[![Go Reference]][godoc]
 [![Codecov Badge]][coverage status]
 [![License Badge]][license]
 
@@ -60,8 +61,20 @@ func main() {
 }
 ```
 
+## Documentation
+
+See the [API documentation on go.dev][godoc]
+
+## Thanks
+
+- [jeromefroe/lru-rs][LRU Cache implementation in a Rust crate]
+- [hashicorp/golang-lru](https://github.com/hashicorp/golang-lru)
+
+
 [build badge]: https://github.com/lovelysunlight/lru-go/actions/workflows/ci.yaml/badge.svg
 [benchmark badge]: https://github.com/lovelysunlight/lru-go/actions/workflows/benchmark.yaml/badge.svg
+[godoc]: https://pkg.go.dev/github.com/lovelysunlight/lru-go?tab=doc
+[go reference]: https://pkg.go.dev/badge/github.com/lovelysunlight/lru-go?status.svg
 [build status]: https://github.com/lovelysunlight/lru-go/actions/workflows/ci.yaml
 [codecov badge]: https://codecov.io/gh/lovelysunlight/lru-go/branch/master/graph/badge.svg
 [coverage status]: https://codecov.io/gh/lovelysunlight/lru-go
