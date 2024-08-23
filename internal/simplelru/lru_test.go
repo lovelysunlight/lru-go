@@ -38,10 +38,10 @@ func TestLRU(t *testing.T) {
 		}
 	}
 	for i := 128; i < 192; i++ {
-		if _, ok := l.Pop(i); !ok {
+		if _, ok := l.Remove(i); !ok {
 			t.Fatalf("should be contained")
 		}
-		if _, ok := l.Pop(i); ok {
+		if _, ok := l.Remove(i); ok {
 			t.Fatalf("should not be contained")
 		}
 		if _, ok := l.Get(i); ok {

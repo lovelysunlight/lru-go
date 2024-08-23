@@ -165,7 +165,7 @@ func TestConcurrency_RemoveOldest(t *testing.T) {
 	}
 }
 
-func TestConcurrency_Pop(t *testing.T) {
+func TestConcurrency_Remove(t *testing.T) {
 	max := 1 << 13
 	var i float64 = 2
 	tests := make([]int, 0, max)
@@ -188,7 +188,7 @@ func TestConcurrency_Pop(t *testing.T) {
 			wg := conc.NewWaitGroup()
 			for i := 1; i <= n; i++ {
 				wg.Go(func() {
-					v, ok := cache.Pop(i)
+					v, ok := cache.Remove(i)
 					assert.True(t, ok)
 					assert.EqualValues(t, i, v)
 				})

@@ -47,8 +47,8 @@ func (c *LRU[K, V]) PeekOldest() (key K, value V, ok bool) {
 	return
 }
 
-// Pop implements LRUCache.
-func (c *LRU[K, V]) Pop(key K) (value V, ok bool) {
+// Removes a key from the cache.
+func (c *LRU[K, V]) Remove(key K) (value V, ok bool) {
 	oldNode, ok := c.items.Remove(key)
 	if ok {
 		c.evictList.Remove(oldNode)

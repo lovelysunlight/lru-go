@@ -113,13 +113,13 @@ func (c *Cache[K, V]) PeekOldest() (key K, value V, ok bool) {
 //	cache, _ := lru.New[string, string](3)
 //	cache.Put("apple", "red")
 //	cache.Put("banana", "yellow")
-//	v, ok := cache.Pop("apple")
+//	v, ok := cache.Remove("apple")
 //	fmt.Println(ok, v)
-func (c *Cache[K, V]) Pop(key K) (value V, ok bool) {
+func (c *Cache[K, V]) Remove(key K) (value V, ok bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	return c.lru.Pop(key)
+	return c.lru.Remove(key)
 }
 
 // Pushes a key-value pair into the cache. If an entry with key `key` already exists in

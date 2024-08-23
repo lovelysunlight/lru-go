@@ -34,8 +34,8 @@ func main() {
 	r, ok = cache.Peek("pear")
 	fmt.Printf("Peek() found: %v, value: %q\n", ok, r)
 
-	r, ok = cache.Pop("banana")
-	fmt.Printf("Pop() found: %v, value: %q\n", ok, r)
+	r, ok = cache.Remove("banana")
+	fmt.Printf("Remove() found: %v, value: %q\n", ok, r)
 
 	r, v, ok = cache.RemoveOldest()
 	fmt.Printf("RemoveOldest() found: %v, key: %q, value: %q\n", ok, r, v)

@@ -21,7 +21,7 @@ type LRUCache[K comparable, V any] interface {
 	Peek(key K) (value V, ok bool)
 
 	// Removes a key from the cache.
-	Pop(key K) (value V, ok bool)
+	Remove(key K) (value V, ok bool)
 
 	// Removes the oldest entry from cache.
 	RemoveOldest() (K, V, bool)

@@ -106,7 +106,7 @@ func TestLruCache_Push_And_Peek(t *testing.T) {
 	assert.False(t, ok)
 }
 
-func TestLruCache_Pop(t *testing.T) {
+func TestLruCache_Remove(t *testing.T) {
 	cache, _ := New[string, string](2)
 	cache.Put("apple", "red")
 	cache.Put("banana", "yellow")
@@ -122,7 +122,7 @@ func TestLruCache_Pop(t *testing.T) {
 	v, ok = cache.Peek("banana")
 	assert_opt_eq(t, ok, v, "yellow")
 
-	v, ok = cache.Pop("apple")
+	v, ok = cache.Remove("apple")
 	assert_opt_eq(t, ok, v, "red")
 	assert.EqualValues(t, 1, cache.Len())
 	_, ok = cache.Peek("apple")
@@ -131,13 +131,13 @@ func TestLruCache_Pop(t *testing.T) {
 	v, ok = cache.Peek("banana")
 	assert_opt_eq(t, ok, v, "yellow")
 
-	v, ok = cache.Pop("banana")
+	v, ok = cache.Remove("banana")
 	assert_opt_eq(t, ok, v, "yellow")
 	assert.EqualValues(t, 0, cache.Len())
 	_, ok = cache.Peek("banana")
 	assert.False(t, ok)
 
-	_, ok = cache.Pop("orange")
+	_, ok = cache.Remove("orange")
 	assert.False(t, ok)
 	assert.EqualValues(t, 0, cache.Len())
 }
