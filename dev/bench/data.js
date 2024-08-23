@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724356360407,
+  "lastUpdate": 1724392460970,
   "repoUrl": "https://github.com/lovelysunlight/lru-go",
   "entries": {
     "Benchmark": [
@@ -352,6 +352,124 @@ window.BENCHMARK_DATA = {
             "value": 0,
             "unit": "allocs/op",
             "extra": "6217698 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jimchen@easyops.cn",
+            "name": "jimchen"
+          },
+          "committer": {
+            "email": "jimchen@easyops.cn",
+            "name": "jimchen"
+          },
+          "distinct": true,
+          "id": "671591e7c3ff1a47b44689938b380b3ca04bcf45",
+          "message": "Refactoring unit testing",
+          "timestamp": "2024-08-23T13:53:30+08:00",
+          "tree_id": "4f5368a41064dd8a87e6c10102535a41861cca6c",
+          "url": "https://github.com/lovelysunlight/lru-go/commit/671591e7c3ff1a47b44689938b380b3ca04bcf45"
+        },
+        "date": 1724392460739,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkCache_Rand",
+            "value": 201.3,
+            "unit": "ns/op\t      36 B/op\t       0 allocs/op",
+            "extra": "6079473 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Rand - ns/op",
+            "value": 201.3,
+            "unit": "ns/op",
+            "extra": "6079473 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Rand - B/op",
+            "value": 36,
+            "unit": "B/op",
+            "extra": "6079473 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Rand - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "6079473 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Freq",
+            "value": 189.9,
+            "unit": "ns/op\t      33 B/op\t       0 allocs/op",
+            "extra": "6137253 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Freq - ns/op",
+            "value": 189.9,
+            "unit": "ns/op",
+            "extra": "6137253 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Freq - B/op",
+            "value": 33,
+            "unit": "B/op",
+            "extra": "6137253 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Freq - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "6137253 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Rand",
+            "value": 197.6,
+            "unit": "ns/op\t      60 B/op\t       0 allocs/op",
+            "extra": "5984760 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Rand - ns/op",
+            "value": 197.6,
+            "unit": "ns/op",
+            "extra": "5984760 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Rand - B/op",
+            "value": 60,
+            "unit": "B/op",
+            "extra": "5984760 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Rand - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "5984760 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Freq",
+            "value": 193.1,
+            "unit": "ns/op\t      55 B/op\t       0 allocs/op",
+            "extra": "6152734 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Freq - ns/op",
+            "value": 193.1,
+            "unit": "ns/op",
+            "extra": "6152734 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Freq - B/op",
+            "value": 55,
+            "unit": "B/op",
+            "extra": "6152734 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Freq - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "6152734 times\n4 procs"
           }
         ]
       }
