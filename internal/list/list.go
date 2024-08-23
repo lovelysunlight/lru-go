@@ -1,4 +1,4 @@
-package simplelru
+package list
 
 type Entry[K comparable, V any] struct {
 	// Next and previous pointers in the doubly-linked list of elements.

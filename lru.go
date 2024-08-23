@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/lovelysunlight/lru-go/internal/deepcopy"
-	"github.com/lovelysunlight/lru-go/internal/simplelru"
+	"github.com/lovelysunlight/lru-go/simplelru"
 )
 
 // Cache is a thread-safe fixed size LRU cache.
@@ -253,7 +253,7 @@ func New[K comparable, V any](size int, options ...func(*cacheOpts)) (c *Cache[K
 		deepCopy: config.DeepCopy,
 	}
 
-	c.lru, err = simplelru.NewLRU[K, V](size)
+	c.lru, err = simplelru.New[K, V](size)
 	return
 }
 

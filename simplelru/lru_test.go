@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLRU(t *testing.T) {
-	_, err := NewLRU[int, int](0)
+func TestCache(t *testing.T) {
+	_, err := New[int, int](0)
 	assert.Error(t, err)
 
-	l, err := NewLRU[int, int](128)
+	l, err := New[int, int](128)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -60,8 +60,8 @@ func TestLRU(t *testing.T) {
 	}
 }
 
-func TestLRU_Replace_Push(t *testing.T) {
-	l, err := NewLRU[int, int](2)
+func TestCache_Replace_Push(t *testing.T) {
+	l, err := New[int, int](2)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -88,8 +88,8 @@ func TestLRU_Replace_Push(t *testing.T) {
 	assert.False(t, ok)
 }
 
-func TestLRU_GetOldest_RemoveOldest(t *testing.T) {
-	l, err := NewLRU[int, int](128)
+func TestCache_GetOldest_RemoveOldest(t *testing.T) {
+	l, err := New[int, int](128)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -119,8 +119,8 @@ func TestLRU_GetOldest_RemoveOldest(t *testing.T) {
 }
 
 // Test that Add returns true/false if an eviction occurred
-func TestLRU_Put(t *testing.T) {
-	l, err := NewLRU[int, int](1)
+func TestCache_Put(t *testing.T) {
+	l, err := New[int, int](1)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -135,7 +135,7 @@ func TestLRU_Put(t *testing.T) {
 		type testCase struct {
 			key string
 		}
-		l, _ := NewLRU[int, *testCase](1)
+		l, _ := New[int, *testCase](1)
 		insert := &testCase{"a"}
 		l.Put(1, insert)
 		got, _ := l.Peek(1)
@@ -151,8 +151,8 @@ func TestLRU_Put(t *testing.T) {
 }
 
 // Test that Peek doesn't update recent-ness
-func TestLRU_Peek(t *testing.T) {
-	l, err := NewLRU[int, int](2)
+func TestCache_Peek(t *testing.T) {
+	l, err := New[int, int](2)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -169,8 +169,8 @@ func TestLRU_Peek(t *testing.T) {
 	}
 }
 
-func TestLRU_PeekOldest(t *testing.T) {
-	l, err := NewLRU[int, int](3)
+func TestCache_PeekOldest(t *testing.T) {
+	l, err := New[int, int](3)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -190,8 +190,8 @@ func TestLRU_PeekOldest(t *testing.T) {
 	}
 }
 
-func TestLRU_Keys_Values(t *testing.T) {
-	l, err := NewLRU[int, int](3)
+func TestCache_Keys_Values(t *testing.T) {
+	l, err := New[int, int](3)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -203,7 +203,7 @@ func TestLRU_Keys_Values(t *testing.T) {
 	assert.EqualValues(t, []int{10, 20, 30}, l.Values())
 }
 
-func TestLRU_Contains(t *testing.T) {
+func TestCache_Contains(t *testing.T) {
 	tests := []struct {
 		name     string
 		initData [][2]string
@@ -231,7 +231,7 @@ func TestLRU_Contains(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			l, err := NewLRU[string, string](3)
+			l, err := New[string, string](3)
 			require.NoError(t, err)
 
 			for _, data := range tt.initData {
