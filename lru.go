@@ -10,8 +10,8 @@ import (
 type Cache[K comparable, V any] struct {
 	mux sync.RWMutex
 	lru *simplelru.LRU[K, V]
-	// `Get`, `Peek` return value is immutable or not, default true.
-	immutable bool
+	// `Get`, `Peek` and so on will acquire a copy value. default false.
+	deepCopy bool
 }
 
 // Values returns a slice of the values in the cache, from oldest to newest.
@@ -36,7 +36,7 @@ func (c *Cache[K, V]) Get(key K) (value V, ok bool) {
 	defer c.mux.RUnlock()
 
 	value, ok = c.lru.Get(key)
-	if ok && c.immutable {
+	if ok && c.deepCopy {
 		return deepcopy.Copy(value), ok
 	}
 	return value, ok
@@ -49,7 +49,7 @@ func (c *Cache[K, V]) Peek(key K) (value V, ok bool) {
 	defer c.mux.RUnlock()
 
 	value, ok = c.lru.Peek(key)
-	if ok && c.immutable {
+	if ok && c.deepCopy {
 		return deepcopy.Copy(value), ok
 	}
 	return value, ok
@@ -61,7 +61,7 @@ func (c *Cache[K, V]) PeekOldest() (key K, value V, ok bool) {
 	defer c.mux.RUnlock()
 
 	key, value, ok = c.lru.PeekOldest()
-	if ok && c.immutable {
+	if ok && c.deepCopy {
 		return deepcopy.Copy(key), deepcopy.Copy(value), ok
 	}
 	return key, value, ok
@@ -109,7 +109,7 @@ func (c *Cache[K, V]) Keys() []K {
 	defer c.mux.RUnlock()
 
 	items := c.lru.Keys()
-	if c.immutable {
+	if c.deepCopy {
 		for i, v := range items {
 			items[i] = deepcopy.Copy(v)
 		}
@@ -123,7 +123,7 @@ func (c *Cache[K, V]) Values() []V {
 	defer c.mux.RUnlock()
 
 	items := c.lru.Values()
-	if c.immutable {
+	if c.deepCopy {
 		for i, v := range items {
 			items[i] = deepcopy.Copy(v)
 		}
@@ -139,29 +139,29 @@ func (c *Cache[K, V]) Clear() {
 }
 
 type cacheOpts struct {
-	Immutable bool
+	DeepCopy bool
 }
 
-func WithMutable() func(*cacheOpts) {
+func EnableDeepCopy() func(*cacheOpts) {
 	return func(c *cacheOpts) {
-		c.Immutable = false
+		c.DeepCopy = true
 	}
 }
 
-func WithImmutable() func(*cacheOpts) {
+func DisableDeepCopy() func(*cacheOpts) {
 	return func(c *cacheOpts) {
-		c.Immutable = true
+		c.DeepCopy = false
 	}
 }
 
 func New[K comparable, V any](size int, options ...func(*cacheOpts)) (c *Cache[K, V], err error) {
 	// create a cache with default settings
-	config := &cacheOpts{Immutable: false}
+	config := &cacheOpts{DeepCopy: false}
 	for _, f := range options {
 		f(config)
 	}
 	c = &Cache[K, V]{
-		immutable: config.Immutable,
+		deepCopy: config.DeepCopy,
 	}
 
 	c.lru, err = simplelru.NewLRU[K, V](size)
