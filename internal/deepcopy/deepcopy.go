@@ -11,6 +11,8 @@ type Interface[T any] interface {
 }
 
 // Iface is an alias to Copy; this exists for backwards compatibility reasons.
+//
+//go:inline
 func Iface(iface interface{}) interface{} {
 	return Copy(iface)
 }
@@ -21,16 +23,16 @@ func Iface(iface interface{}) interface{} {
 //
 //go:inline
 func Copy[T any](src T) T {
-	var empty T
-	if reflect.DeepEqual(src, empty) {
-		return empty
+	var zero T
+	if reflect.DeepEqual(src, zero) {
+		return src
 	}
 
 	// Make the interface a reflect.Value
 	original := reflect.ValueOf(src)
 
 	// If it's a basic type, we don't need to do anything special.
-	if isBasicType[T](&original) {
+	if willCopy[T](&original) {
 		return src
 	}
 
@@ -44,23 +46,18 @@ func Copy[T any](src T) T {
 	return cpy.Interface().(T)
 }
 
-func isBasicType[T any](cpy *reflect.Value) bool {
-	// check for implement deepcopy.Interface
-	if cpy.CanInterface() {
-		if _, ok := cpy.Interface().(Interface[T]); ok {
-			return false
-		}
-	}
-
-	switch cpy.Kind() {
-	case reflect.Bool:
+//go:inline
+func willCopy[T any](cpy *reflect.Value) bool {
+	switch cpy.Type().String() {
+	case "bool":
 		fallthrough
-	case reflect.String:
+	case "string":
 		fallthrough
-	case reflect.Float32, reflect.Float64:
+	case "float32", "float64":
 		fallthrough
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	case "int", "int8", "int16", "int32", "int64":
+		fallthrough
+	case "uint", "uint8", "uint16", "uint32", "uint64":
 		return true
 	default:
 		return false
@@ -90,20 +87,6 @@ func copyRecursive[T any](original, cpy reflect.Value) {
 		}
 		cpy.Set(reflect.New(originalValue.Type()))
 		copyRecursive[T](originalValue, cpy.Elem())
-
-	// uncover
-	case reflect.Interface:
-		// If this is a nil, don't do anything
-		if original.IsNil() {
-			return
-		}
-		// Get the value for the interface, not the pointer.
-		originalValue := original.Elem()
-
-		// Get the value by calling Elem().
-		copyValue := reflect.New(originalValue.Type()).Elem()
-		copyRecursive[T](originalValue, copyValue)
-		cpy.Set(copyValue)
 
 	case reflect.Struct:
 		t, ok := original.Interface().(time.Time)
@@ -136,7 +119,10 @@ func copyRecursive[T any](original, cpy reflect.Value) {
 			copyKey := Copy(key.Interface())
 			cpy.SetMapIndex(reflect.ValueOf(copyKey), copyValue)
 		}
-
+	case reflect.Chan, reflect.Func:
+		panic("deepcopy: unsupported `chan` and `function`")
+	// case reflect.Interface:
+	// 	return
 	default:
 		cpy.Set(original)
 	}
