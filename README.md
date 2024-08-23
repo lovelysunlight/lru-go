@@ -2,9 +2,9 @@
 
 [![Build Badge]][build status]
 [![Benchmark Badge]][benchmark status]
-[![Go Reference]][godoc]
 [![Codecov Badge]][coverage status]
 [![Go Report Badge]][report status]
+[![Go Reference]][godoc]
 [![License Badge]][license]
 
 An implementation of a LRU cache. The cache supports `Push`, `Put`, `Get` `Peek` and `Pop` operations,
