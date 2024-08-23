@@ -32,8 +32,8 @@ func (c *Cache[K, V]) Len() int {
 
 // Get looks up a key's value from the cache.
 func (c *Cache[K, V]) Get(key K) (value V, ok bool) {
-	c.mux.RLock()
-	defer c.mux.RUnlock()
+	c.mux.Lock()
+	defer c.mux.Unlock()
 
 	value, ok = c.lru.Get(key)
 	if ok && c.deepCopy {

@@ -257,4 +257,22 @@ func TestCache_Contains(t *testing.T) {
 			assert.EqualValues(t, tt.want, l.Contains(tt.key))
 		})
 	}
+
+	t.Run("contains without updating the recent-ness.", func(t *testing.T) {
+		l, _ := New[string, string](3)
+		l.Put("foo", "foo")
+		l.Put("zoo", "zoo")
+
+		k, v, ok := l.PeekOldest()
+		assert.True(t, ok)
+		assert.EqualValues(t, "foo", k)
+		assert.EqualValues(t, "foo", v)
+
+		assert.True(t, l.Contains("foo"))
+
+		k, v, ok = l.PeekOldest()
+		assert.True(t, ok)
+		assert.EqualValues(t, "foo", k)
+		assert.EqualValues(t, "foo", v)
+	})
 }
