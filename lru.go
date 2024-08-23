@@ -216,12 +216,12 @@ type cacheOpts struct {
 
 // Enable to return a deep copy of the value in `Get`, `Peek`,  `PeekOldest`, `Keys` and `Values`.
 //
-//		cache, _ := lru.New[string, string](3, lru.EnableDeepCopy())
-//		cache.Put("foo", []int{1,2})
-//		v1, _ := cache.Get("apple")
-//		v1[0] = 100
-//	 v2, _ := cache.Get("apple")
-//	 fmt.Println(v1, v2)
+//	cache, _ := lru.New[string, string](3, lru.EnableDeepCopy())
+//	cache.Put("foo", []int{1,2})
+//	v1, _ := cache.Get("apple")
+//	v1[0] = 100
+//	v2, _ := cache.Get("apple")
+//	fmt.Println(v1, v2)
 func EnableDeepCopy() func(*cacheOpts) {
 	return func(c *cacheOpts) {
 		c.DeepCopy = true
@@ -230,12 +230,12 @@ func EnableDeepCopy() func(*cacheOpts) {
 
 // Disable to return a deep copy of the value in `Get`, `Peek`,  `PeekOldest`, `Keys` and `Values`.
 //
-//		cache, _ := lru.New[string, string](3, lru.DisableDeepCopy())
-//		cache.Put("foo", []int{1,2})
-//		v1, _ := cache.Get("apple")
-//		v1[0] = 100
-//	 v2, _ := cache.Get("apple")
-//	 fmt.Println(v1, v2)
+//	cache, _ := lru.New[string, string](3, lru.DisableDeepCopy())
+//	cache.Put("foo", []int{1,2})
+//	v1, _ := cache.Get("apple")
+//	v1[0] = 100
+//	v2, _ := cache.Get("apple")
+//	fmt.Println(v1, v2)
 func DisableDeepCopy() func(*cacheOpts) {
 	return func(c *cacheOpts) {
 		c.DeepCopy = false
