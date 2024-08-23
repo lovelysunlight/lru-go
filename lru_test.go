@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func assert_opt_eq[V any](t *testing.T, ok bool, got, v V) {
@@ -217,4 +218,43 @@ func TestCache_Keys_Values(t *testing.T) {
 
 	assert.EqualValues(t, []int{1, 2, 3}, l.Keys())
 	assert.EqualValues(t, []int{10, 20, 30}, l.Values())
+}
+
+func TestCache_Contains(t *testing.T) {
+	tests := []struct {
+		name     string
+		initData [][2]string
+		key      string
+		want     bool
+	}{
+		{
+			name: "contains",
+			initData: [][2]string{
+				{"foo", "foo"},
+				{"zoo", "zoo"},
+			},
+			key:  "foo",
+			want: true,
+		},
+		{
+			name: "not contains",
+			initData: [][2]string{
+				{"foo", "foo"},
+				{"zoo", "zoo"},
+			},
+			key:  "bar",
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l, err := New[string, string](3)
+			require.NoError(t, err)
+
+			for _, data := range tt.initData {
+				l.Push(data[0], data[1])
+			}
+			assert.EqualValues(t, tt.want, l.Contains(tt.key))
+		})
+	}
 }

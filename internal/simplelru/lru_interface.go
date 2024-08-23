@@ -14,6 +14,9 @@ type LRUCache[K comparable, V any] interface {
 	// updates the "recently used"-ness of the key. #value, isFound
 	Get(key K) (value V, ok bool)
 
+	// Checks if a key exists in cache without updating the recent-ness.
+	Contains(key K) (ok bool)
+
 	// Returns key's value without updating the "recently used"-ness of the key.
 	Peek(key K) (value V, ok bool)
 

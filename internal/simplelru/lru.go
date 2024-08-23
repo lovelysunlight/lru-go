@@ -33,6 +33,12 @@ func (c *LRU[K, V]) Peek(key K) (value V, ok bool) {
 	return value, ok
 }
 
+// Checks if a key exists in cache without updating the recent-ness.
+func (c *LRU[K, V]) Contains(key K) (ok bool) {
+	_, ok = c.items.Get(key)
+	return ok
+}
+
 // Returns the oldest entry without updating the "recently used"-ness of the key.
 func (c *LRU[K, V]) PeekOldest() (key K, value V, ok bool) {
 	if ent := c.evictList.Back(); ent != nil {

@@ -55,6 +55,14 @@ func (c *Cache[K, V]) Peek(key K) (value V, ok bool) {
 	return value, ok
 }
 
+// Checks if a key exists in cache without updating the recent-ness.
+func (c *Cache[K, V]) Contains(key K) (ok bool) {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+
+	return c.lru.Contains(key)
+}
+
 // Returns the oldest entry without updating the "recently used"-ness of the key.
 func (c *Cache[K, V]) PeekOldest() (key K, value V, ok bool) {
 	c.mux.RLock()
