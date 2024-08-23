@@ -7,8 +7,8 @@ import (
 	"github.com/pioz/faker"
 )
 
-func BenchmarkCache_Rand(b *testing.B) {
-	l, err := lru.New[int64, int64](8192, lru.DisableDeepCopy())
+func BenchmarkCache_DeepCopy_Rand(b *testing.B) {
+	l, err := lru.New[int64, int64](8192, lru.EnableDeepCopy())
 	if err != nil {
 		b.Fatalf("err: %v", err)
 	}
@@ -33,8 +33,8 @@ func BenchmarkCache_Rand(b *testing.B) {
 	b.Logf("hit: %d miss: %d ratio: %f", hit, miss, float64(hit)/float64(hit+miss))
 }
 
-func BenchmarkCache_Freq(b *testing.B) {
-	l, err := lru.New[int64, int64](8192, lru.DisableDeepCopy())
+func BenchmarkCache_DeepCopy_Freq(b *testing.B) {
+	l, err := lru.New[int64, int64](8192, lru.EnableDeepCopy())
 	if err != nil {
 		b.Fatalf("err: %v", err)
 	}
