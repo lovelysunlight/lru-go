@@ -4,6 +4,7 @@
 [![Benchmark Badge]][benchmark status]
 [![Go Reference]][godoc]
 [![Codecov Badge]][coverage status]
+[![Go Report Badge]][report status]
 [![License Badge]][license]
 
 An implementation of a LRU cache. The cache supports `Push`, `Put`, `Get` `Peek` and `Pop` operations,
@@ -78,6 +79,8 @@ See the [API documentation on go.dev][godoc]
 [build status]: https://github.com/lovelysunlight/lru-go/actions/workflows/ci.yaml
 [codecov badge]: https://codecov.io/gh/lovelysunlight/lru-go/branch/master/graph/badge.svg
 [coverage status]: https://codecov.io/gh/lovelysunlight/lru-go
+[go Report badge]: https://goreportcard.com/badge/github.com/lovelysunlight/lru-go
+[report status]: https://goreportcard.com/report/github.com/lovelysunlight/lru-go
 [benchmark status]: https://lovelysunlight.github.io/lru-go/dev/bench/
 [license badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [license]: https://raw.githubusercontent.com/lovelysunlight/lru-go/master/LICENSE
