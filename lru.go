@@ -10,7 +10,7 @@ import (
 // Cache is a thread-safe fixed size LRU cache.
 type Cache[K comparable, V any] struct {
 	mux      sync.RWMutex
-	lru      *simplelru.LRU[K, V]
+	lru      simplelru.LRUCache[K, V]
 	deepCopy bool
 }
 
