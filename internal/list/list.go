@@ -122,19 +122,14 @@ func (l *DoublyLinkedList[K, V]) Back() *Entry[K, V] {
 }
 
 // Root returns the root of the list.
-func (l *DoublyLinkedList[K, V]) Root() *Entry[K, V] {
-	return &l.root
-}
-
-// Root returns the root of the list.
 func (l *DoublyLinkedList[K, V]) Debug() []string {
 	asc := []string{"root"}
-	for ent := l.Root().next; ent.list == l; ent = ent.next {
+	for ent := l.root.next; ent.list == l; ent = ent.next {
 		asc = append(asc, fmt.Sprintf("%v", ent.Key))
 	}
 	asc = append(asc, "root")
 	desc := []string{"root"}
-	for ent := l.Root().prev; ent.list == l; ent = ent.prev {
+	for ent := l.root.prev; ent.list == l; ent = ent.prev {
 		desc = append(desc, fmt.Sprintf("%v", ent.Key))
 	}
 	desc = append(desc, "root")

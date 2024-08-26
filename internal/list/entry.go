@@ -19,8 +19,18 @@ type Entry[K comparable, V any] struct {
 }
 
 // PrevEntry returns the previous list element or nil.
+// note: can't get root entry
 func (e *Entry[K, V]) PrevEntry() *Entry[K, V] {
-	if p := e.prev; e.list != nil && p != e.list.Root() {
+	if p := e.prev; e.list != nil && p != &e.list.root {
+		return p
+	}
+	return nil
+}
+
+// NextEntry returns the next list element or nil.
+// note: can't get root entry
+func (e *Entry[K, V]) NextEntry() *Entry[K, V] {
+	if p := e.next; e.list != nil && p != &e.list.root {
 		return p
 	}
 	return nil

@@ -190,12 +190,13 @@ func (c *Cache[K, V]) removeElement(ent *list.Entry[K, *LFUValue[V]]) {
 
 // moveForward is used to move a given list element to the front of the cache
 func (c *Cache[K, V]) moveForward(ent *list.Entry[K, *LFUValue[V]]) {
+	// if ent is root entry, ent.PrevEntry() is nil
 	for prev := ent.PrevEntry(); prev != nil; prev = ent.PrevEntry() {
 		if ent.Value.GetVisit() < prev.Value.GetVisit() {
 			break
 		}
-		if !c.evictList.MoveToAt(ent, prev.PrevEntry()) {
-			break
-		}
+		// because ent can't get root entry from PrevEntry(),
+		// so we don't need to check
+		_ = c.evictList.MoveToAt(ent, prev.PrevEntry())
 	}
 }
