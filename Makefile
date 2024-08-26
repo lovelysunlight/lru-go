@@ -1,11 +1,13 @@
 GO ?= go
 GOFMT ?= gofmt "-s"
+CURRENT_DIR := $(shell pwd)
 GO_VERSION=$(shell $(GO) version | cut -c 14- | cut -d' ' -f1 | cut -d'.' -f2)
 PACKAGES ?= $(shell $(GO) list ./...)
 VETPACKAGES ?= $(shell $(GO) list ./... | grep -v /examples/)
 GOFILES := $(shell find . -name "*.go")
-TESTFOLDER := $(shell $(GO) list ./... | grep -v examples | grep -v benchmarks)
-BENCHFOLDER := $(shell $(GO) list ./... | grep benchmarks)
+TESTFOLDER := $(shell $(GO) list ./... | grep -v examples | grep -v benchmark)
+BENCHFOLDER := $(shell $(GO) list .)/benchmark
+BENCHMARK_OUT := $(CURRENT_DIR)/benchmark.out
 TESTTAGS ?= ""
 
 .PHONY: test
@@ -32,22 +34,22 @@ test:
 	done
 
 .PHONY: bench
-# runs benchmarks.
+# runs benchmark.
+bench: SHELL:=/bin/bash
 bench:
-	$(GO) test -benchmem -bench . -v -coverprofile=profile.out $(BENCHFOLDER) > benchmark.out; \
-	cat benchmark.out; \
-	if grep -q "^--- FAIL" benchmark.out; then \
-		rm benchmark.out; \
+	pushd $(CURRENT_DIR)/benchmark > /dev/null; \
+	$(GO) test -benchmem -bench . -v $(BENCHFOLDER) > $(BENCHMARK_OUT); \
+	popd > /dev/null; \
+	cat $(BENCHMARK_OUT); \
+	if grep -q "^--- FAIL" $(BENCHMARK_OUT); then \
+		rm $(BENCHMARK_OUT); \
 		exit 1; \
-	elif grep -q "build failed" benchmark.out; then \
-		rm benchmark.out; \
+	elif grep -q "build failed" $(BENCHMARK_OUT); then \
+		rm $(BENCHMARK_OUT); \
 		exit 1; \
-	elif grep -q "setup failed" benchmark.out; then \
-		rm benchmark.out; \
+	elif grep -q "setup failed" $(BENCHMARK_OUT); then \
+		rm $(BENCHMARK_OUT); \
 		exit 1; \
-	fi; \
-	if [ -f profile.out ]; then \
-		rm profile.out; \
 	fi; \
 
 .PHONY: fmt
