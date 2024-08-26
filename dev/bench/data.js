@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1724430152275,
+  "lastUpdate": 1724658850006,
   "repoUrl": "https://github.com/lovelysunlight/lru-go",
   "entries": {
     "Benchmark": [
@@ -2814,6 +2814,170 @@ window.BENCHMARK_DATA = {
             "value": 0,
             "unit": "allocs/op",
             "extra": "5974934 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "lovelysunlight",
+            "username": "lovelysunlight"
+          },
+          "committer": {
+            "name": "lovelysunlight",
+            "username": "lovelysunlight"
+          },
+          "id": "b4caa0fa3878b07b600fe4f80a2041dc9b4dd42a",
+          "message": "Support LRU-K",
+          "timestamp": "2024-08-23T16:22:05Z",
+          "url": "https://github.com/lovelysunlight/lru-go/pull/1/commits/b4caa0fa3878b07b600fe4f80a2041dc9b4dd42a"
+        },
+        "date": 1724658849577,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkCache_DeepCopy_Rand",
+            "value": 231.4,
+            "unit": "ns/op\t      40 B/op\t       1 allocs/op",
+            "extra": "5237751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_DeepCopy_Rand - ns/op",
+            "value": 231.4,
+            "unit": "ns/op",
+            "extra": "5237751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_DeepCopy_Rand - B/op",
+            "value": 40,
+            "unit": "B/op",
+            "extra": "5237751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_DeepCopy_Rand - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "5237751 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_DeepCopy_Freq",
+            "value": 225.3,
+            "unit": "ns/op\t      38 B/op\t       1 allocs/op",
+            "extra": "5353724 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_DeepCopy_Freq - ns/op",
+            "value": 225.3,
+            "unit": "ns/op",
+            "extra": "5353724 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_DeepCopy_Freq - B/op",
+            "value": 38,
+            "unit": "B/op",
+            "extra": "5353724 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_DeepCopy_Freq - allocs/op",
+            "value": 1,
+            "unit": "allocs/op",
+            "extra": "5353724 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Rand",
+            "value": 213.4,
+            "unit": "ns/op\t      36 B/op\t       0 allocs/op",
+            "extra": "5725772 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Rand - ns/op",
+            "value": 213.4,
+            "unit": "ns/op",
+            "extra": "5725772 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Rand - B/op",
+            "value": 36,
+            "unit": "B/op",
+            "extra": "5725772 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Rand - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "5725772 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Freq",
+            "value": 201.8,
+            "unit": "ns/op\t      33 B/op\t       0 allocs/op",
+            "extra": "5840467 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Freq - ns/op",
+            "value": 201.8,
+            "unit": "ns/op",
+            "extra": "5840467 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Freq - B/op",
+            "value": 33,
+            "unit": "B/op",
+            "extra": "5840467 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkCache_Freq - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "5840467 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Rand",
+            "value": 196.5,
+            "unit": "ns/op\t      60 B/op\t       0 allocs/op",
+            "extra": "5945821 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Rand - ns/op",
+            "value": 196.5,
+            "unit": "ns/op",
+            "extra": "5945821 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Rand - B/op",
+            "value": 60,
+            "unit": "B/op",
+            "extra": "5945821 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Rand - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "5945821 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Freq",
+            "value": 191.3,
+            "unit": "ns/op\t      55 B/op\t       0 allocs/op",
+            "extra": "6215053 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Freq - ns/op",
+            "value": 191.3,
+            "unit": "ns/op",
+            "extra": "6215053 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Freq - B/op",
+            "value": 55,
+            "unit": "B/op",
+            "extra": "6215053 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkHashicorpLRU_Freq - allocs/op",
+            "value": 0,
+            "unit": "allocs/op",
+            "extra": "6215053 times\n4 procs"
           }
         ]
       }
