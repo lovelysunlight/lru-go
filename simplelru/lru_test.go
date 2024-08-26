@@ -178,6 +178,9 @@ func TestCache_PeekOldest(t *testing.T) {
 		k, v int
 		ok   bool
 	)
+	_, _, ok = l.PeekOldest()
+	assert.False(t, ok)
+
 	l.Put(1, 1)
 	l.Put(2, 2)
 	l.Put(3, 3)
@@ -201,6 +204,18 @@ func TestCache_Keys_Values(t *testing.T) {
 
 	assert.EqualValues(t, []int{1, 2, 3}, l.Keys())
 	assert.EqualValues(t, []int{10, 20, 30}, l.Values())
+}
+
+func TestCache_Resize(t *testing.T) {
+	l, _ := New[int, int](1)
+	assert.EqualValues(t, 0, l.Resize(3))
+
+	l.Put(1, 10)
+	l.Put(2, 20)
+	l.Put(3, 30)
+	assert.EqualValues(t, 3, l.Len())
+	assert.EqualValues(t, 2, l.Resize(1))
+	assert.EqualValues(t, 1, l.Len())
 }
 
 func TestCache_Contains(t *testing.T) {

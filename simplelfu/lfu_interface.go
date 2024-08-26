@@ -1,7 +1,7 @@
-package simplelru
+package simplelfu
 
-// LRUCache is the interface for simple LRU cache.
-type LRUCache[K comparable, V any] interface {
+// LFUCache is the interface for simple LFU cache.
+type LFUCache[K comparable, V any] interface {
 	// Adds a value to the cache, returns evicted Value and true if an eviction occurred and
 	// updates the "recently used"-ness of the key.
 	Put(key K, value V) (oldValue V, ok bool)
@@ -20,14 +20,17 @@ type LRUCache[K comparable, V any] interface {
 	// Returns key's value without updating the "recently used"-ness of the key.
 	Peek(key K) (value V, ok bool)
 
+	// Returns used of key's value
+	PeekUsed(key K) (used uint64, ok bool)
+
 	// Removes a key from the cache.
 	Remove(key K) (value V, ok bool)
 
-	// Removes the oldest entry from cache.
-	RemoveOldest() (K, V, bool)
+	// Removes the least item from cache.
+	RemoveLeast() (K, V, bool)
 
-	// Returns the oldest entry without updating the "recently used"-ness of the key.
-	PeekOldest() (K, V, bool)
+	// Returns the least entry without updating the "recently used"-ness of the key.
+	PeekLeast() (K, V, bool)
 
 	// Returns a slice of the keys in the cache, from oldest to newest.
 	Keys() []K

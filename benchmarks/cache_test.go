@@ -8,7 +8,7 @@ import (
 )
 
 func BenchmarkCache_Rand(b *testing.B) {
-	l, err := lru.New[int64, int64](8192, lru.DisableDeepCopy())
+	l, err := lru.New[int64, int64](8192, lru.DisableDeepCopy[int64, int64]())
 	if err != nil {
 		b.Fatalf("err: %v", err)
 	}
@@ -34,7 +34,7 @@ func BenchmarkCache_Rand(b *testing.B) {
 }
 
 func BenchmarkCache_Freq(b *testing.B) {
-	l, err := lru.New[int64, int64](8192, lru.DisableDeepCopy())
+	l, err := lru.New[int64, int64](8192, lru.DisableDeepCopy[int64, int64]())
 	if err != nil {
 		b.Fatalf("err: %v", err)
 	}
