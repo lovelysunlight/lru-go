@@ -3,8 +3,6 @@ module github.com/lovelysunlight/lru-go
 go 1.22
 
 require (
-	github.com/hashicorp/golang-lru/v2 v2.0.7
-	github.com/pioz/faker v1.7.3
 	github.com/sourcegraph/conc v0.3.0
 	github.com/stretchr/testify v1.9.0
 )
