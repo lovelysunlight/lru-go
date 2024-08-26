@@ -37,7 +37,7 @@ func TestLruList_PushFront(t *testing.T) {
 	assert.EqualValues(t, 1, l.Len())
 
 	second := l.PushFront(2, 22)
-	assert.EqualValues(t, second.prev, l.Root()) // forbid root
+	assert.EqualValues(t, second.prev, &l.root) // forbid root
 	assert.Equal(t, first.PrevEntry(), second)
 
 	assert.EqualValues(t, 2, second.Key)
@@ -118,7 +118,7 @@ func TestLruList_PushBack(t *testing.T) {
 	assert.EqualValues(t, 1, l.Len())
 
 	second := l.PushBack(2, 22)
-	assert.Equal(t, second.next, l.Root())
+	assert.Equal(t, second.next, &l.root)
 	assert.Equal(t, first.next, second)
 
 	assert.EqualValues(t, 2, second.Key)
@@ -155,5 +155,7 @@ func TestLruList_Entry(t *testing.T) {
 	first := l.PushFront(1, 1)
 	second := l.PushFront(2, 2)
 	assert.Equal(t, first.PrevEntry(), second)
+	assert.Equal(t, second.NextEntry(), first)
 	assert.Nil(t, second.PrevEntry())
+	assert.Nil(t, first.NextEntry())
 }
