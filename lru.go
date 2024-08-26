@@ -1,20 +1,25 @@
 package lru
 
 import (
+	"slices"
 	"sync"
 
-	"github.com/lovelysunlight/lru-go/internal/deepcopy"
+	"github.com/lovelysunlight/lru-go/simplelfu"
 	"github.com/lovelysunlight/lru-go/simplelru"
 )
 
 // Cache is a thread-safe fixed size LRU cache.
 type Cache[K comparable, V any] struct {
-	mux      sync.RWMutex
-	lru      simplelru.LRUCache[K, V]
-	deepCopy bool
+	deepCopyExt[K, V]
+
+	mux   sync.RWMutex
+	lru   simplelru.LRUCache[K, V]
+	visit simplelfu.LFUCache[K, V]
+
+	visitThreshold uint64
 }
 
-// Values returns a slice of the values in the cache, from oldest to newest.
+// Values returns the size of LRU cache.
 //
 //	cache, _ := lru.New[string, string](3)
 //	fmt.Println(lru.Cap())
@@ -25,7 +30,7 @@ func (c *Cache[K, V]) Cap() int {
 	return c.lru.Cap()
 }
 
-// Len returns the number of items in the cache.
+// Len returns the number of items in the LRU cache.
 //
 //	cache, _ := lru.New[string, string](3)
 //	cache.Put("apple", "red")
@@ -50,9 +55,18 @@ func (c *Cache[K, V]) Get(key K) (value V, ok bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	value, ok = c.lru.Get(key)
-	if ok && c.deepCopy {
-		return deepcopy.Copy(value), ok
+	if value, ok = c.lru.Get(key); ok {
+		return c.OptionalCopyValue(value), ok
+	}
+	if c.IsUpgradeToLRUK() {
+		if value, ok = c.visit.Get(key); ok {
+			used, _ := c.visit.PeekUsed(key)
+			if c.isExpectedVisit(used) {
+				value, _ = c.visit.Remove(key)
+				c.lru.Put(key, value)
+				return c.OptionalCopyValue(value), true
+			}
+		}
 	}
 	return value, ok
 }
@@ -69,11 +83,15 @@ func (c *Cache[K, V]) Peek(key K) (value V, ok bool) {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	value, ok = c.lru.Peek(key)
-	if ok && c.deepCopy {
-		return deepcopy.Copy(value), ok
+	if value, ok = c.lru.Peek(key); ok {
+		return c.OptionalCopyValue(value), ok
 	}
-	return value, ok
+	if c.IsUpgradeToLRUK() {
+		if value, ok = c.visit.Peek(key); ok {
+			return c.OptionalCopyValue(value), ok
+		}
+	}
+	return
 }
 
 // Checks if a key exists in cache without updating the recent-ness.
@@ -86,7 +104,7 @@ func (c *Cache[K, V]) Contains(key K) (ok bool) {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	return c.lru.Contains(key)
+	return c.lru.Contains(key) || c.visit.Contains(key)
 }
 
 // Returns the oldest entry without updating the "recently used"-ness of the key.
@@ -100,11 +118,10 @@ func (c *Cache[K, V]) PeekOldest() (key K, value V, ok bool) {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	key, value, ok = c.lru.PeekOldest()
-	if ok && c.deepCopy {
-		return deepcopy.Copy(key), deepcopy.Copy(value), ok
+	if key, value, ok = c.lru.PeekOldest(); ok {
+		return c.OptionalCopyKey(key), c.OptionalCopyValue(value), ok
 	}
-	return key, value, ok
+	return
 }
 
 // Remove removes the provided key from the cache, returning the value if the
@@ -119,7 +136,13 @@ func (c *Cache[K, V]) Remove(key K) (value V, ok bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	return c.lru.Remove(key)
+	if value, ok = c.lru.Remove(key); ok {
+		return value, true
+	}
+	if c.IsUpgradeToLRUK() {
+		return c.visit.Remove(key)
+	}
+	return
 }
 
 // Pushes a key-value pair into the cache. If an entry with key `key` already exists in
@@ -132,6 +155,16 @@ func (c *Cache[K, V]) Push(key K, value V) (oldKey K, oldValue V, ok bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
+	if c.IsUpgradeToLRUK() {
+		if !c.lru.Contains(key) {
+			oldKey, oldValue, ok = c.visit.Push(key, value)
+			used, _ := c.visit.PeekUsed(key)
+			if c.isExpectedVisit(used) {
+				c.moveToLru(key)
+			}
+			return
+		}
+	}
 	return c.lru.Push(key, value)
 }
 
@@ -144,6 +177,17 @@ func (c *Cache[K, V]) Push(key K, value V) (oldKey K, oldValue V, ok bool) {
 func (c *Cache[K, V]) Put(key K, value V) (oldValue V, ok bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
+
+	if c.IsUpgradeToLRUK() {
+		if !c.lru.Contains(key) {
+			oldValue, ok = c.visit.Put(key, value)
+			used, _ := c.visit.PeekUsed(key)
+			if c.isExpectedVisit(used) {
+				c.moveToLru(key)
+			}
+			return
+		}
+	}
 
 	return c.lru.Put(key, value)
 }
@@ -169,13 +213,9 @@ func (c *Cache[K, V]) Keys() []K {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	items := c.lru.Keys()
-	if c.deepCopy {
-		for i, v := range items {
-			items[i] = deepcopy.Copy(v)
-		}
-	}
-	return items
+	return c.OptionalCopyKeyN(
+		slices.Concat(c.lru.Keys(), c.visit.Keys()),
+	)
 }
 
 // Values returns a slice of the values in the cache, from oldest to newest.
@@ -188,13 +228,9 @@ func (c *Cache[K, V]) Values() []V {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	items := c.lru.Values()
-	if c.deepCopy {
-		for i, v := range items {
-			items[i] = deepcopy.Copy(v)
-		}
-	}
-	return items
+	return c.OptionalCopyValueN(
+		slices.Concat(c.lru.Values(), c.visit.Values()),
+	)
 }
 
 // Clears all cache entries.
@@ -207,12 +243,68 @@ func (c *Cache[K, V]) Values() []V {
 func (c *Cache[K, V]) Clear() {
 	c.mux.Lock()
 	c.lru.Clear()
+	if c.IsUpgradeToLRUK() {
+		c.visit.Clear()
+	}
 	c.mux.Unlock()
 }
 
-type cacheOpts struct {
-	DeepCopy bool
+// Resize changes the cache size.
+//
+//	cache, _ := lru.New[string, string](3)
+//	cache.Put("apple", "red")
+//	cache.Put("banana", "yellow")
+//	cache.Put("orange", "orange")
+//	fmt.Println(cache.Resize(2), cache.Cap())
+func (c *Cache[K, V]) Resize(size int) (evicted int) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	return c.lru.Resize(size)
 }
+
+var _ simplelru.LRUCache[any, any] = (*Cache[any, any])(nil)
+
+// VisitCacheCap returns the size of LFU cache.
+func (c *Cache[K, V]) VisitCacheCap() int {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+
+	return c.visit.Cap()
+}
+
+// VisitCacheLen returns the number of items in the LFU cache.
+func (c *Cache[K, V]) VisitCacheLen() int {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+
+	return c.visit.Len()
+}
+
+// Resize changes the LFU cache size.
+func (c *Cache[K, V]) VisitCacheResize(size int) int {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	return c.visit.Resize(size)
+}
+
+// whether or not enable LRU-K algorithm
+func (c *Cache[K, V]) IsUpgradeToLRUK() bool {
+	return c.visitThreshold > 1
+}
+
+func (c *Cache[K, V]) isExpectedVisit(visit uint64) bool {
+	return visit >= c.visitThreshold
+}
+
+func (c *Cache[K, V]) moveToLru(key K) {
+	if value, ok := c.visit.Remove(key); ok {
+		c.lru.Push(key, value)
+	}
+}
+
+type cacheOptionFunc[K comparable, V any] func(*Cache[K, V])
 
 // Enable to return a deep copy of the value in `Get`, `Peek`,  `PeekOldest`, `Keys` and `Values`.
 //
@@ -222,9 +314,11 @@ type cacheOpts struct {
 //	v1[0] = 100
 //	v2, _ := cache.Get("apple")
 //	fmt.Println(v1, v2)
-func EnableDeepCopy() func(*cacheOpts) {
-	return func(c *cacheOpts) {
-		c.DeepCopy = true
+func EnableDeepCopy[K comparable, V any]() cacheOptionFunc[K, V] {
+	return func(c *Cache[K, V]) {
+		c.deepCopyExt = deepCopyExt[K, V]{
+			copy: true,
+		}
 	}
 }
 
@@ -236,25 +330,45 @@ func EnableDeepCopy() func(*cacheOpts) {
 //	v1[0] = 100
 //	v2, _ := cache.Get("apple")
 //	fmt.Println(v1, v2)
-func DisableDeepCopy() func(*cacheOpts) {
-	return func(c *cacheOpts) {
-		c.DeepCopy = false
+func DisableDeepCopy[K comparable, V any]() cacheOptionFunc[K, V] {
+	return func(c *Cache[K, V]) {
+		c.deepCopyExt = deepCopyExt[K, V]{
+			copy: false,
+		}
+	}
+}
+
+// Enable LRU-K algorithm
+func EnableLRUK[K comparable, V any](threshold uint64) cacheOptionFunc[K, V] {
+	return func(c *Cache[K, V]) {
+		c.visitThreshold = threshold
+	}
+}
+
+// Resize the size of visit cache.
+func WithVisitCacheSize[K comparable, V any](size int) cacheOptionFunc[K, V] {
+	return func(c *Cache[K, V]) {
+		if size > 0 {
+			c.visit.Resize(size)
+		}
 	}
 }
 
 // New creates an LRU of the given size.
-func New[K comparable, V any](size int, options ...func(*cacheOpts)) (c *Cache[K, V], err error) {
-	// create a cache with default settings
-	config := &cacheOpts{DeepCopy: false}
-	for _, f := range options {
-		f(config)
-	}
+func New[K comparable, V any](size int, opts ...cacheOptionFunc[K, V]) (c *Cache[K, V], err error) {
 	c = &Cache[K, V]{
-		deepCopy: config.DeepCopy,
+		deepCopyExt: deepCopyExt[K, V]{
+			copy: false,
+		},
+		visitThreshold: 0,
 	}
-
 	c.lru, err = simplelru.New[K, V](size)
+	if err != nil {
+		return
+	}
+	c.visit, _ = simplelfu.New[K, V](size)
+	for _, f := range opts {
+		f(c)
+	}
 	return
 }
-
-var _ simplelru.LRUCache[any, any] = (*Cache[any, any])(nil)

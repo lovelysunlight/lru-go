@@ -11,7 +11,7 @@ import (
 type Cache[K comparable, V any] struct {
 	size      int
 	items     *hashmap.Map[K, *list.Entry[K, V]]
-	evictList *list.LruList[K, V]
+	evictList *list.DoublyLinkedList[K, V]
 }
 
 // Returns key's value from the cache and
@@ -83,7 +83,7 @@ func New[K comparable, V any](size int) (*Cache[K, V], error) {
 
 	c := &Cache[K, V]{
 		size:      size,
-		evictList: list.NewList[K, V](),
+		evictList: list.NewDoublyLinkedList[K, V](),
 		items:     hashmap.New[K, *list.Entry[K, V]](),
 	}
 	return c, nil
@@ -91,7 +91,7 @@ func New[K comparable, V any](size int) (*Cache[K, V], error) {
 
 // Len returns the number of items in the cache.
 func (c *Cache[K, V]) Len() int {
-	return c.evictList.Length()
+	return c.evictList.Len()
 }
 
 // Cap returns the capacity of the cache
@@ -110,7 +110,7 @@ func (c *Cache[K, V]) RemoveOldest() (key K, value V, ok bool) {
 
 // Keys returns a slice of the keys in the cache, from oldest to newest.
 func (c *Cache[K, V]) Keys() []K {
-	keys := make([]K, c.evictList.Length())
+	keys := make([]K, c.evictList.Len())
 	i := 0
 	for ent := c.evictList.Back(); ent != nil; ent = ent.PrevEntry() {
 		keys[i] = ent.Key
@@ -121,7 +121,7 @@ func (c *Cache[K, V]) Keys() []K {
 
 // Values returns a slice of the values in the cache, from oldest to newest.
 func (c *Cache[K, V]) Values() []V {
-	values := make([]V, c.evictList.Length())
+	values := make([]V, c.evictList.Len())
 	i := 0
 	for ent := c.evictList.Back(); ent != nil; ent = ent.PrevEntry() {
 		values[i] = ent.Value
@@ -134,6 +134,19 @@ func (c *Cache[K, V]) Values() []V {
 func (c *Cache[K, V]) Clear() {
 	c.evictList.Init()
 	c.items.Clear()
+}
+
+// Resize changes the cache size.
+func (c *Cache[K, V]) Resize(size int) (evicted int) {
+	diff := c.Len() - size
+	if diff < 0 {
+		diff = 0
+	}
+	for i := 0; i < diff; i++ {
+		c.RemoveOldest()
+	}
+	c.size = size
+	return diff
 }
 
 // removeElement is used to remove a given list element from the cache
