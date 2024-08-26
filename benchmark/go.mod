@@ -1,6 +1,6 @@
 module github.com/lovelysunlight/lru-go/benchmark
 
-go 1.22.6
+go 1.22
 
 require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
