@@ -149,3 +149,11 @@ func TestLruList_MoveToAt(t *testing.T) {
 		"root <- 1 <- 2 <- root",
 	}, l.Debug())
 }
+
+func TestLruList_Entry(t *testing.T) {
+	l := NewDoublyLinkedList[int, int]()
+	first := l.PushFront(1, 1)
+	second := l.PushFront(2, 2)
+	assert.Equal(t, first.PrevEntry(), second)
+	assert.Nil(t, second.PrevEntry())
+}
