@@ -252,7 +252,7 @@ func TestSimpleLFU_Put(t *testing.T) {
 	assert.False(t, ok)
 }
 
-func TestSimpleLFU_PeekUsed(t *testing.T) {
+func TestSimpleLFU_PeekVisits(t *testing.T) {
 	var (
 		v  uint64
 		ok bool
@@ -260,22 +260,22 @@ func TestSimpleLFU_PeekUsed(t *testing.T) {
 	cache, _ := New[int, int](2)
 	cache.Put(1, 1)
 
-	v, _ = cache.PeekUsed(1)
+	v, _ = cache.PeekVisits(1)
 	assert.EqualValues(t, 1, v)
 
 	cache.Put(1, 1)
-	v, _ = cache.PeekUsed(1)
+	v, _ = cache.PeekVisits(1)
 	assert.EqualValues(t, 2, v)
 
 	cache.Put(1, 11)
-	v, _ = cache.PeekUsed(1)
+	v, _ = cache.PeekVisits(1)
 	assert.EqualValues(t, 3, v)
 
 	cache.Get(1)
-	v, _ = cache.PeekUsed(1)
+	v, _ = cache.PeekVisits(1)
 	assert.EqualValues(t, 4, v)
 
-	v, ok = cache.PeekUsed(2)
+	v, ok = cache.PeekVisits(2)
 	assert.False(t, ok)
 	assert.EqualValues(t, 0, v)
 }

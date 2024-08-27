@@ -60,15 +60,15 @@ func (c *Cache[K, V]) Get(key K) (value V, ok bool) {
 	}
 	if c.IsUpgradeToLRUK() {
 		if value, ok = c.visit.Get(key); ok {
-			used, _ := c.visit.PeekUsed(key)
-			if c.isExpectedVisit(used) {
+			visits, _ := c.visit.PeekVisits(key)
+			if c.isExpectedVisits(visits) {
 				value, _ = c.visit.Remove(key)
 				c.lru.Put(key, value)
 				return c.OptionalCopyValue(value), true
 			}
 		}
 	}
-	return value, ok
+	return
 }
 
 // Peek returns the key value (or undefined if not found) without updating
@@ -158,8 +158,8 @@ func (c *Cache[K, V]) Push(key K, value V) (oldKey K, oldValue V, ok bool) {
 	if c.IsUpgradeToLRUK() {
 		if !c.lru.Contains(key) {
 			oldKey, oldValue, ok = c.visit.Push(key, value)
-			used, _ := c.visit.PeekUsed(key)
-			if c.isExpectedVisit(used) {
+			visits, _ := c.visit.PeekVisits(key)
+			if c.isExpectedVisits(visits) {
 				c.moveToLru(key)
 			}
 			return
@@ -181,8 +181,8 @@ func (c *Cache[K, V]) Put(key K, value V) (oldValue V, ok bool) {
 	if c.IsUpgradeToLRUK() {
 		if !c.lru.Contains(key) {
 			oldValue, ok = c.visit.Put(key, value)
-			used, _ := c.visit.PeekUsed(key)
-			if c.isExpectedVisit(used) {
+			visits, _ := c.visit.PeekVisits(key)
+			if c.isExpectedVisits(visits) {
 				c.moveToLru(key)
 			}
 			return
@@ -294,8 +294,8 @@ func (c *Cache[K, V]) IsUpgradeToLRUK() bool {
 	return c.visitThreshold > 1
 }
 
-func (c *Cache[K, V]) isExpectedVisit(visit uint64) bool {
-	return visit >= c.visitThreshold
+func (c *Cache[K, V]) isExpectedVisits(visits uint64) bool {
+	return visits >= c.visitThreshold
 }
 
 func (c *Cache[K, V]) moveToLru(key K) {
