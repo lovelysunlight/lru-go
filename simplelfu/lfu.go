@@ -31,7 +31,7 @@ func (c *Cache[K, V]) Contains(key K) (ok bool) {
 // Get implements LFUCache.
 func (c *Cache[K, V]) Get(key K) (value V, ok bool) {
 	if ent, ok := c.items.Get(key); ok {
-		ent.Value.IncrVisit()
+		ent.Value.IncrVisits()
 		c.moveForward(ent)
 		return ent.Value.Value(), true
 	}
@@ -60,10 +60,10 @@ func (c *Cache[K, V]) Peek(key K) (value V, ok bool) {
 	return
 }
 
-// Returns used of key's value
-func (c *Cache[K, V]) PeekUsed(key K) (used uint64, ok bool) {
+// Returns visits of key's value
+func (c *Cache[K, V]) PeekVisits(key K) (used uint64, ok bool) {
 	if v, ok := c.items.Get(key); ok {
-		return v.Value.GetVisit(), true
+		return v.Value.GetVisits(), true
 	}
 	return
 }
@@ -156,7 +156,7 @@ func (c *Cache[K, V]) capturingPut(key K, val V, capture bool) (K, V, bool) {
 	if ent, ok := c.items.Get(key); ok {
 		oldVal := ent.Value.Value()
 		ent.Value.SetValue(val)
-		ent.Value.IncrVisit()
+		ent.Value.IncrVisits()
 		c.moveForward(ent)
 		return key, oldVal, true
 	}
@@ -166,7 +166,7 @@ func (c *Cache[K, V]) capturingPut(key K, val V, capture bool) (K, V, bool) {
 		oldKey, oldVal, ok = c.RemoveLeast()
 	}
 	ent := c.evictList.PushBack(key, &LFUValue[V]{
-		value: val, visit: 1,
+		value: val, visits: 1,
 	})
 	c.items.Set(key, ent)
 	c.moveForward(ent)
@@ -192,7 +192,7 @@ func (c *Cache[K, V]) removeElement(ent *list.Entry[K, *LFUValue[V]]) {
 func (c *Cache[K, V]) moveForward(ent *list.Entry[K, *LFUValue[V]]) {
 	// if ent is root entry, ent.PrevEntry() is nil
 	for prev := ent.PrevEntry(); prev != nil; prev = ent.PrevEntry() {
-		if ent.Value.GetVisit() < prev.Value.GetVisit() {
+		if ent.Value.GetVisits() < prev.Value.GetVisits() {
 			break
 		}
 		// because ent can't get root entry from PrevEntry(),

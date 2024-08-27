@@ -9,7 +9,7 @@ type Entry[K comparable, V any] struct {
 	next, prev *Entry[K, V]
 
 	// The list to which this element belongs.
-	list *DoublyLinkedList[K, V]
+	list Interface[K, V]
 
 	// The LRU Key of this element.
 	Key K
@@ -21,7 +21,7 @@ type Entry[K comparable, V any] struct {
 // PrevEntry returns the previous list element or nil.
 // note: can't get root entry
 func (e *Entry[K, V]) PrevEntry() *Entry[K, V] {
-	if p := e.prev; e.list != nil && p != &e.list.root {
+	if p := e.prev; e.list != nil && p != e.list.Root() {
 		return p
 	}
 	return nil
@@ -30,7 +30,7 @@ func (e *Entry[K, V]) PrevEntry() *Entry[K, V] {
 // NextEntry returns the next list element or nil.
 // note: can't get root entry
 func (e *Entry[K, V]) NextEntry() *Entry[K, V] {
-	if p := e.next; e.list != nil && p != &e.list.root {
+	if p := e.next; e.list != nil && p != e.list.Root() {
 		return p
 	}
 	return nil

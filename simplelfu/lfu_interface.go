@@ -20,8 +20,8 @@ type LFUCache[K comparable, V any] interface {
 	// Returns key's value without updating the "recently used"-ness of the key.
 	Peek(key K) (value V, ok bool)
 
-	// Returns used of key's value
-	PeekUsed(key K) (used uint64, ok bool)
+	// Returns visits of key's value
+	PeekVisits(key K) (used uint64, ok bool)
 
 	// Removes a key from the cache.
 	Remove(key K) (value V, ok bool)

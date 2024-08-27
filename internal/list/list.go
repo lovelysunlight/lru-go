@@ -64,6 +64,11 @@ func (l *DoublyLinkedList[K, V]) Remove(e *Entry[K, V]) V {
 	return e.Value
 }
 
+// Root returns the root of the list.
+func (l *DoublyLinkedList[K, V]) Root() *Entry[K, V] {
+	return &l.root
+}
+
 // move moves e to next to at.
 func (l *DoublyLinkedList[K, V]) move(e, at *Entry[K, V]) {
 	if e == at {

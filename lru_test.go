@@ -305,61 +305,7 @@ func TestCache_Contains(t *testing.T) {
 
 func TestCacheUpgradeToLRUK_Push(t *testing.T) {
 	var (
-		k, v int
-		ok   bool
-	)
-	cache, _ := New(3,
-		WithVisitCacheSize[int, int](4),
-		EnableLRUK[int, int](3),
-	)
-	assert.EqualValues(t, 3, cache.Cap())
-	assert.EqualValues(t, 4, cache.VisitCacheCap())
-	assert.EqualValues(t, 3, cache.visitThreshold)
-
-	t.Run("move to lru", func(t *testing.T) {
-		cache.Push(1, 1)
-		cache.Push(2, 2)
-		_, _, ok = cache.Push(3, 3)
-		assert.False(t, ok)
-
-		k, v, ok = cache.Push(1, 11)
-		assert.True(t, ok)
-		assert.EqualValues(t, 1, k)
-		assert.EqualValues(t, 1, v)
-
-		k, v, ok = cache.Push(1, 1) // move to lru
-		assert.True(t, ok)
-		assert.EqualValues(t, 1, k)
-		assert.EqualValues(t, 11, v)
-
-		k, v, ok = cache.Push(1, 1)
-		assert.True(t, ok)
-		assert.EqualValues(t, 1, k)
-		assert.EqualValues(t, 1, v)
-
-		assert.EqualValues(t, 1, cache.Len())
-		assert.EqualValues(t, 2, cache.VisitCacheLen())
-	})
-
-	t.Run("push to lfu and evict", func(t *testing.T) {
-		cache.Clear()
-		cache.VisitCacheResize(3)
-		_, _, ok = cache.Push(1, 1)
-		assert.False(t, ok)
-		_, _, ok = cache.Push(2, 2)
-		assert.False(t, ok)
-		_, _, ok = cache.Push(3, 3)
-		assert.False(t, ok)
-		k, v, ok = cache.Push(4, 4)
-		assert.True(t, ok)
-		assert.EqualValues(t, k, 1)
-		assert.EqualValues(t, v, 1)
-	})
-}
-
-func TestCacheUpgradeToLRUK_Put(t *testing.T) {
-	var (
-		v  int
+		// k, v int
 		ok bool
 	)
 	cache, _ := New(3,
@@ -367,34 +313,58 @@ func TestCacheUpgradeToLRUK_Put(t *testing.T) {
 		EnableLRUK[int, int](3),
 	)
 	assert.EqualValues(t, 3, cache.Cap())
-	assert.EqualValues(t, 4, cache.VisitCacheCap())
+	assert.EqualValues(t, 4, cache.VisitsCap())
 	assert.EqualValues(t, 3, cache.visitThreshold)
 
-	t.Run("move to lru", func(t *testing.T) {
-		cache.Put(1, 1)
-		cache.Put(2, 2)
-		_, ok = cache.Put(3, 3)
+	t.Run("push to lfu and evict", func(t *testing.T) {
+		cache.VisitsResize(3)
+		_, _, ok = cache.Push(1, 1)
 		assert.False(t, ok)
-
-		v, ok = cache.Put(1, 11)
-		assert.True(t, ok)
-		assert.EqualValues(t, 1, v)
-
-		v, ok = cache.Put(1, 1) // move to lru
-		assert.True(t, ok)
-		assert.EqualValues(t, 11, v)
-
-		v, ok = cache.Put(1, 1)
-		assert.True(t, ok)
-		assert.EqualValues(t, 1, v)
-
-		assert.EqualValues(t, 1, cache.Len())
-		assert.EqualValues(t, 2, cache.VisitCacheLen())
+		_, _, ok = cache.Push(2, 2)
+		assert.False(t, ok)
+		_, _, ok = cache.Push(3, 3)
+		assert.False(t, ok)
+		_, _, ok = cache.Push(4, 4)
+		assert.False(t, ok)
 	})
 
-	t.Run("push to lfu and evict", func(t *testing.T) {
+	t.Run("incr visits", func(t *testing.T) {
+		cache, _ := New(3,
+			WithVisitCacheSize[int, int](4),
+			EnableLRUK[int, int](3),
+		)
+
+		cache.VisitsResize(3)
+		cache.Push(1, 1)
+		v, _ := cache.visit.PeekVisits(1)
+		assert.EqualValues(t, 1, v)
+
+		cache.Push(1, 1)
+		v, _ = cache.visit.PeekVisits(1)
+		assert.EqualValues(t, 2, v)
+
+		cache.Push(1, 1)
+		v, _ = cache.visit.PeekVisits(1)
+		assert.EqualValues(t, 3, v)
+	})
+}
+
+func TestCacheUpgradeToLRUK_Put(t *testing.T) {
+	var (
+		// v  int
+		ok bool
+	)
+	cache, _ := New(3,
+		WithVisitCacheSize[int, int](4),
+		EnableLRUK[int, int](3),
+	)
+	assert.EqualValues(t, 3, cache.Cap())
+	assert.EqualValues(t, 4, cache.VisitsCap())
+	assert.EqualValues(t, 3, cache.visitThreshold)
+
+	t.Run("put to lfu and evict", func(t *testing.T) {
 		cache.Clear()
-		cache.VisitCacheResize(3)
+		cache.VisitsResize(3)
 		_, ok = cache.Put(1, 1)
 		assert.False(t, ok)
 		_, ok = cache.Put(2, 2)
@@ -404,51 +374,26 @@ func TestCacheUpgradeToLRUK_Put(t *testing.T) {
 		_, ok = cache.Put(4, 4)
 		assert.False(t, ok)
 	})
-}
 
-func TestCacheUpgradeToLRUK_Remove(t *testing.T) {
-	var (
-		v  int
-		ok bool
-	)
-	cache, _ := New(3,
-		WithVisitCacheSize[int, int](3),
-		EnableLRUK[int, int](2),
-	)
-	cache.Push(1, 1)
-	cache.Push(2, 2)
-	cache.Push(1, 1)
+	t.Run("incr visits", func(t *testing.T) {
+		cache, _ := New(3,
+			WithVisitCacheSize[int, int](4),
+			EnableLRUK[int, int](3),
+		)
 
-	assert.EqualValues(t, 1, cache.Len())
-	assert.EqualValues(t, 1, cache.VisitCacheLen())
+		cache.VisitsResize(3)
+		cache.Put(1, 1)
+		v, _ := cache.visit.PeekVisits(1)
+		assert.EqualValues(t, 1, v)
 
-	v, ok = cache.Remove(1)
-	assert.True(t, ok)
-	assert.EqualValues(t, 1, v)
-	assert.EqualValues(t, 0, cache.Len())
-	assert.EqualValues(t, 1, cache.VisitCacheLen())
+		cache.Put(1, 1)
+		v, _ = cache.visit.PeekVisits(1)
+		assert.EqualValues(t, 2, v)
 
-	v, ok = cache.Remove(2)
-	assert.True(t, ok)
-	assert.EqualValues(t, 2, v)
-	assert.EqualValues(t, 0, cache.Len())
-	assert.EqualValues(t, 0, cache.VisitCacheLen())
-}
-
-func TestCacheUpgradeToLRUK_Contains(t *testing.T) {
-	cache, _ := New(3,
-		WithVisitCacheSize[int, int](3),
-		EnableLRUK[int, int](2),
-	)
-	cache.Push(1, 1)
-	cache.Push(2, 2)
-	cache.Push(1, 1)
-
-	assert.EqualValues(t, 1, cache.Len())
-	assert.EqualValues(t, 1, cache.VisitCacheLen())
-
-	assert.True(t, cache.Contains(1))
-	assert.True(t, cache.Contains(2))
+		cache.Put(1, 1)
+		v, _ = cache.visit.PeekVisits(1)
+		assert.EqualValues(t, 3, v)
+	})
 }
 
 func TestCacheUpgradeToLRUK_Get(t *testing.T) {
@@ -468,75 +413,129 @@ func TestCacheUpgradeToLRUK_Get(t *testing.T) {
 	assert.True(t, ok)
 	assert.EqualValues(t, 1, v)
 	assert.EqualValues(t, 0, cache.Len())
-	assert.EqualValues(t, 2, cache.VisitCacheLen())
+	assert.EqualValues(t, 2, cache.VisitsLen())
 
 	v, ok = cache.Get(1) // move to lru
 	assert.True(t, ok)
 	assert.EqualValues(t, 1, v)
 	assert.EqualValues(t, 1, cache.Len())
-	assert.EqualValues(t, 1, cache.VisitCacheLen())
+	assert.EqualValues(t, 1, cache.VisitsLen())
 
 	v, ok = cache.Get(2) // move to lru
 	assert.True(t, ok)
 	assert.EqualValues(t, 2, v)
 	assert.EqualValues(t, 2, cache.Len())
-	assert.EqualValues(t, 0, cache.VisitCacheLen())
+	assert.EqualValues(t, 0, cache.VisitsLen())
 }
 
-func TestCacheUpgradeToLRUK_Peek(t *testing.T) {
+func TestCacheUpgradeTo2Q_FIFOResize(t *testing.T) {
+	cache, _ := New(4,
+		WithVisitCacheSize[int, int](4),
+		Enable2Q[int, int](2),
+	)
+	assert.EqualValues(t, 2, cache.FIFOCap())
+	cache.FIFOResize(3)
+	assert.EqualValues(t, 3, cache.FIFOCap())
+}
+
+func TestCacheUpgradeTo2Q_Get(t *testing.T) {
+	cache, _ := New(4,
+		WithVisitCacheSize[int, int](4),
+		Enable2Q[int, int](2),
+	)
+
 	var (
 		v  int
 		ok bool
 	)
-	cache, _ := New(3,
-		WithVisitCacheSize[int, int](3),
-		EnableLRUK[int, int](2),
-	)
 	cache.Push(1, 1)
 	cache.Push(2, 2)
+	assert.EqualValues(t, 0, cache.Len())
+	assert.EqualValues(t, 2, cache.FIFOLen())
 
-	v, ok = cache.Peek(1)
+	_, ok = cache.Peek(1)
+	assert.False(t, ok)
+
+	_, ok = cache.Peek(2)
+	assert.False(t, ok)
+
+	v, ok = cache.Get(1)
 	assert.True(t, ok)
 	assert.EqualValues(t, 1, v)
-	assert.EqualValues(t, 0, cache.Len())
-	assert.EqualValues(t, 2, cache.VisitCacheLen())
+	assert.EqualValues(t, 1, cache.Len())
+	assert.EqualValues(t, 1, cache.FIFOLen())
 
-	v, ok = cache.Peek(1)
-	assert.True(t, ok)
-	assert.EqualValues(t, 1, v)
-	assert.EqualValues(t, 0, cache.Len())
-	assert.EqualValues(t, 2, cache.VisitCacheLen())
-
-	v, ok = cache.Peek(2)
+	v, ok = cache.Get(2)
 	assert.True(t, ok)
 	assert.EqualValues(t, 2, v)
-	assert.EqualValues(t, 0, cache.Len())
-	assert.EqualValues(t, 2, cache.VisitCacheLen())
+	assert.EqualValues(t, 2, cache.Len())
+	assert.EqualValues(t, 0, cache.FIFOLen())
+}
 
-	cache.Get(1)
-	for i := 0; i < 2; i++ {
-		v, ok = cache.Peek(1)
+func TestCacheUpgradeTo2Q_Push_Put(t *testing.T) {
+	t.Run("push", func(t *testing.T) {
+		cache, _ := New(4,
+			WithVisitCacheSize[int, int](4),
+			Enable2Q[int, int](2),
+		)
+		var (
+			v  int
+			ok bool
+		)
+		cache.Push(1, 1)
+		cache.Push(2, 2)
+		assert.EqualValues(t, 0, cache.Len())
+		assert.EqualValues(t, 2, cache.FIFOLen())
+
+		_, ok = cache.Peek(1)
+		assert.False(t, ok)
+
+		_, ok = cache.Peek(2)
+		assert.False(t, ok)
+
+		v, ok = cache.Get(1)
 		assert.True(t, ok)
 		assert.EqualValues(t, 1, v)
 		assert.EqualValues(t, 1, cache.Len())
-		assert.EqualValues(t, 1, cache.VisitCacheLen())
-	}
-}
+		assert.EqualValues(t, 1, cache.FIFOLen())
 
-func TestCacheUpgradeToLRUK_Keys_Values(t *testing.T) {
-	cache, _ := New(4,
-		WithVisitCacheSize[int, int](4),
-		EnableLRUK[int, int](2),
-	)
-	cache.Put(1, 10)
-	cache.Put(2, 20)
-	cache.Put(3, 30)
-	cache.Put(4, 40)
-	cache.Put(2, 20)
-	cache.Put(3, 30)
-	assert.EqualValues(t, 2, cache.Len())
-	assert.EqualValues(t, 2, cache.VisitCacheLen())
+		v, ok = cache.Get(2)
+		assert.True(t, ok)
+		assert.EqualValues(t, 2, v)
+		assert.EqualValues(t, 2, cache.Len())
+		assert.EqualValues(t, 0, cache.FIFOLen())
+	})
 
-	assert.EqualValues(t, []int{2, 3, 1, 4}, cache.Keys())
-	assert.EqualValues(t, []int{20, 30, 10, 40}, cache.Values())
+	t.Run("put", func(t *testing.T) {
+		cache, _ := New(4,
+			WithVisitCacheSize[int, int](4),
+			Enable2Q[int, int](2),
+		)
+		var (
+			v  int
+			ok bool
+		)
+		cache.Put(1, 1)
+		cache.Put(2, 2)
+		assert.EqualValues(t, 0, cache.Len())
+		assert.EqualValues(t, 2, cache.FIFOLen())
+
+		_, ok = cache.Peek(1)
+		assert.False(t, ok)
+
+		_, ok = cache.Peek(2)
+		assert.False(t, ok)
+
+		v, ok = cache.Get(1)
+		assert.True(t, ok)
+		assert.EqualValues(t, 1, v)
+		assert.EqualValues(t, 1, cache.Len())
+		assert.EqualValues(t, 1, cache.FIFOLen())
+
+		v, ok = cache.Get(2)
+		assert.True(t, ok)
+		assert.EqualValues(t, 2, v)
+		assert.EqualValues(t, 2, cache.Len())
+		assert.EqualValues(t, 0, cache.FIFOLen())
+	})
 }
