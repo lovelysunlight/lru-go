@@ -4,6 +4,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/lovelysunlight/lru-go/internal/list"
 	"github.com/lovelysunlight/lru-go/simplelfu"
 	"github.com/lovelysunlight/lru-go/simplelru"
 )
@@ -15,6 +16,7 @@ type Cache[K comparable, V any] struct {
 	mux   sync.RWMutex
 	lru   simplelru.LRUCache[K, V]
 	visit simplelfu.LFUCache[K, V]
+	fifo  *list.FIFO[K, V]
 
 	visitThreshold uint64
 }
@@ -66,6 +68,11 @@ func (c *Cache[K, V]) Get(key K) (value V, ok bool) {
 				c.lru.Put(key, value)
 				return c.OptionalCopyValue(value), true
 			}
+		}
+	} else if c.IsUpgradeTo2Q() {
+		if e, ok := c.fifo.Remove(key); ok {
+			c.lru.Put(key, e.Value)
+			return c.OptionalCopyValue(e.Value), true
 		}
 	}
 	return
@@ -155,16 +162,22 @@ func (c *Cache[K, V]) Push(key K, value V) (oldKey K, oldValue V, ok bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	if c.IsUpgradeToLRUK() {
-		if !c.lru.Contains(key) {
+	if !c.lru.Contains(key) {
+		if c.IsUpgradeToLRUK() {
 			oldKey, oldValue, ok = c.visit.Push(key, value)
 			visits, _ := c.visit.PeekVisits(key)
 			if c.isExpectedVisits(visits) {
 				c.moveToLru(key)
 			}
 			return
+		} else if c.IsUpgradeTo2Q() {
+			if _, ok := c.fifo.Get(key); !ok {
+				c.fifo.Push(key, value)
+			}
+			return oldKey, oldValue, false
 		}
 	}
+
 	return c.lru.Push(key, value)
 }
 
@@ -178,14 +191,19 @@ func (c *Cache[K, V]) Put(key K, value V) (oldValue V, ok bool) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	if c.IsUpgradeToLRUK() {
-		if !c.lru.Contains(key) {
+	if !c.lru.Contains(key) {
+		if c.IsUpgradeToLRUK() {
 			oldValue, ok = c.visit.Put(key, value)
 			visits, _ := c.visit.PeekVisits(key)
 			if c.isExpectedVisits(visits) {
 				c.moveToLru(key)
 			}
 			return
+		} else if c.IsUpgradeTo2Q() {
+			if _, ok := c.fifo.Get(key); !ok {
+				c.fifo.Push(key, value)
+			}
+			return oldValue, false
 		}
 	}
 
@@ -294,6 +312,11 @@ func (c *Cache[K, V]) IsUpgradeToLRUK() bool {
 	return c.visitThreshold > 1
 }
 
+// whether or not enable 2Q algorithm
+func (c *Cache[K, V]) IsUpgradeTo2Q() bool {
+	return c.fifo != nil && c.fifo.Size() > 0
+}
+
 func (c *Cache[K, V]) isExpectedVisits(visits uint64) bool {
 	return visits >= c.visitThreshold
 }
@@ -342,6 +365,13 @@ func DisableDeepCopy[K comparable, V any]() cacheOptionFunc[K, V] {
 func EnableLRUK[K comparable, V any](threshold uint64) cacheOptionFunc[K, V] {
 	return func(c *Cache[K, V]) {
 		c.visitThreshold = threshold
+	}
+}
+
+// Enable 2Q algorithm
+func Enable2Q[K comparable, V any](size int) cacheOptionFunc[K, V] {
+	return func(c *Cache[K, V]) {
+		c.fifo = list.NewFIFOList[K, V](size)
 	}
 }
 

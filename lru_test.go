@@ -540,3 +540,104 @@ func TestCacheUpgradeToLRUK_Keys_Values(t *testing.T) {
 	assert.EqualValues(t, []int{2, 3, 1, 4}, cache.Keys())
 	assert.EqualValues(t, []int{20, 30, 10, 40}, cache.Values())
 }
+
+func TestCacheUpgradeTo2Q_Get(t *testing.T) {
+	cache, _ := New(4,
+		WithVisitCacheSize[int, int](4),
+		Enable2Q[int, int](2),
+	)
+	var (
+		v  int
+		ok bool
+	)
+	cache.Push(1, 1)
+	cache.Push(2, 2)
+	assert.EqualValues(t, 0, cache.Len())
+	assert.EqualValues(t, 2, cache.fifo.Len())
+
+	_, ok = cache.Peek(1)
+	assert.False(t, ok)
+
+	_, ok = cache.Peek(2)
+	assert.False(t, ok)
+
+	v, ok = cache.Get(1)
+	assert.True(t, ok)
+	assert.EqualValues(t, 1, v)
+	assert.EqualValues(t, 1, cache.Len())
+	assert.EqualValues(t, 1, cache.fifo.Len())
+
+	v, ok = cache.Get(2)
+	assert.True(t, ok)
+	assert.EqualValues(t, 2, v)
+	assert.EqualValues(t, 2, cache.Len())
+	assert.EqualValues(t, 0, cache.fifo.Len())
+}
+
+func TestCacheUpgradeTo2Q_Push_Put(t *testing.T) {
+	t.Run("push", func(t *testing.T) {
+		cache, _ := New(4,
+			WithVisitCacheSize[int, int](4),
+			Enable2Q[int, int](2),
+		)
+		var (
+			v  int
+			ok bool
+		)
+		cache.Push(1, 1)
+		cache.Push(2, 2)
+		assert.EqualValues(t, 0, cache.Len())
+		assert.EqualValues(t, 2, cache.fifo.Len())
+	
+		_, ok = cache.Peek(1)
+		assert.False(t, ok)
+	
+		_, ok = cache.Peek(2)
+		assert.False(t, ok)
+	
+		v, ok = cache.Get(1)
+		assert.True(t, ok)
+		assert.EqualValues(t, 1, v)
+		assert.EqualValues(t, 1, cache.Len())
+		assert.EqualValues(t, 1, cache.fifo.Len())
+	
+		v, ok = cache.Get(2)
+		assert.True(t, ok)
+		assert.EqualValues(t, 2, v)
+		assert.EqualValues(t, 2, cache.Len())
+		assert.EqualValues(t, 0, cache.fifo.Len())
+	})
+
+	t.Run("put", func(t *testing.T) {
+		cache, _ := New(4,
+			WithVisitCacheSize[int, int](4),
+			Enable2Q[int, int](2),
+		)
+		var (
+			v  int
+			ok bool
+		)
+		cache.Put(1, 1)
+		cache.Put(2, 2)
+		assert.EqualValues(t, 0, cache.Len())
+		assert.EqualValues(t, 2, cache.fifo.Len())
+	
+		_, ok = cache.Peek(1)
+		assert.False(t, ok)
+	
+		_, ok = cache.Peek(2)
+		assert.False(t, ok)
+	
+		v, ok = cache.Get(1)
+		assert.True(t, ok)
+		assert.EqualValues(t, 1, v)
+		assert.EqualValues(t, 1, cache.Len())
+		assert.EqualValues(t, 1, cache.fifo.Len())
+	
+		v, ok = cache.Get(2)
+		assert.True(t, ok)
+		assert.EqualValues(t, 2, v)
+		assert.EqualValues(t, 2, cache.Len())
+		assert.EqualValues(t, 0, cache.fifo.Len())
+	})
+}
