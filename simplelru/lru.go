@@ -50,7 +50,7 @@ func (c *Cache[K, V]) PeekOldest() (key K, value V, ok bool) {
 	return
 }
 
-// Removes a key from the cache.f
+// Removes a key from the cache.
 func (c *Cache[K, V]) Remove(key K) (value V, ok bool) {
 	oldNode, ok := c.items.Remove(key)
 	if ok {
