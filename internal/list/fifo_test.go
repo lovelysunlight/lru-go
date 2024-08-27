@@ -17,6 +17,25 @@ func TestFIFO(t *testing.T) {
 	list.lazyInit()
 }
 
+func TestFIFO_Resize(t *testing.T) {
+	list := NewFIFOList[int, int](10)
+	assert.EqualValues(t, 10, list.Size())
+	assert.EqualValues(t, 0, list.Len())
+	assert.EqualValues(t, 0, list.Resize(4))
+	assert.EqualValues(t, 4, list.Size())
+
+	list.Push(1, 1)
+	list.Push(2, 2)
+	list.Push(3, 3)
+	list.Push(4, 4)
+
+	assert.True(t, list.Contains(1))
+	assert.EqualValues(t, 1, list.Resize(3))
+	assert.EqualValues(t, 3, list.Size())
+	assert.EqualValues(t, 3, list.Len())
+	assert.False(t, list.Contains(1))
+}
+
 func TestFIFO_Push(t *testing.T) {
 	list := NewFIFOList[int, int](3)
 	list.Push(1, 1)

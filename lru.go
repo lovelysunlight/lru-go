@@ -1,7 +1,6 @@
 package lru
 
 import (
-	"slices"
 	"sync"
 
 	"github.com/lovelysunlight/lru-go/internal/list"
@@ -60,7 +59,7 @@ func (c *Cache[K, V]) Get(key K) (value V, ok bool) {
 	if value, ok = c.lru.Get(key); ok {
 		return c.OptionalCopyValue(value), ok
 	}
-	if c.IsUpgradeToLRUK() {
+	if c.IsEnableLRUK() {
 		if value, ok = c.visit.Get(key); ok {
 			visits, _ := c.visit.PeekVisits(key)
 			if c.isExpectedVisits(visits) {
@@ -69,7 +68,7 @@ func (c *Cache[K, V]) Get(key K) (value V, ok bool) {
 				return c.OptionalCopyValue(value), true
 			}
 		}
-	} else if c.IsUpgradeTo2Q() {
+	} else if c.IsEnable2Q() {
 		if e, ok := c.fifo.Remove(key); ok {
 			c.lru.Put(key, e.Value)
 			return c.OptionalCopyValue(e.Value), true
@@ -93,7 +92,7 @@ func (c *Cache[K, V]) Peek(key K) (value V, ok bool) {
 	if value, ok = c.lru.Peek(key); ok {
 		return c.OptionalCopyValue(value), ok
 	}
-	if c.IsUpgradeToLRUK() {
+	if c.IsEnableLRUK() {
 		if value, ok = c.visit.Peek(key); ok {
 			return c.OptionalCopyValue(value), ok
 		}
@@ -111,7 +110,7 @@ func (c *Cache[K, V]) Contains(key K) (ok bool) {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	return c.lru.Contains(key) || c.visit.Contains(key)
+	return c.lru.Contains(key)
 }
 
 // Returns the oldest entry without updating the "recently used"-ness of the key.
@@ -146,9 +145,6 @@ func (c *Cache[K, V]) Remove(key K) (value V, ok bool) {
 	if value, ok = c.lru.Remove(key); ok {
 		return value, true
 	}
-	if c.IsUpgradeToLRUK() {
-		return c.visit.Remove(key)
-	}
 	return
 }
 
@@ -163,18 +159,14 @@ func (c *Cache[K, V]) Push(key K, value V) (oldKey K, oldValue V, ok bool) {
 	defer c.mux.Unlock()
 
 	if !c.lru.Contains(key) {
-		if c.IsUpgradeToLRUK() {
-			oldKey, oldValue, ok = c.visit.Push(key, value)
-			visits, _ := c.visit.PeekVisits(key)
-			if c.isExpectedVisits(visits) {
-				c.moveToLru(key)
-			}
+		if c.IsEnableLRUK() {
+			c.visit.Push(key, value)
 			return
-		} else if c.IsUpgradeTo2Q() {
-			if _, ok := c.fifo.Get(key); !ok {
+		} else if c.IsEnable2Q() {
+			if !c.fifo.Contains(key) {
 				c.fifo.Push(key, value)
 			}
-			return oldKey, oldValue, false
+			return
 		}
 	}
 
@@ -192,14 +184,10 @@ func (c *Cache[K, V]) Put(key K, value V) (oldValue V, ok bool) {
 	defer c.mux.Unlock()
 
 	if !c.lru.Contains(key) {
-		if c.IsUpgradeToLRUK() {
-			oldValue, ok = c.visit.Put(key, value)
-			visits, _ := c.visit.PeekVisits(key)
-			if c.isExpectedVisits(visits) {
-				c.moveToLru(key)
-			}
+		if c.IsEnableLRUK() {
+			c.visit.Put(key, value)
 			return
-		} else if c.IsUpgradeTo2Q() {
+		} else if c.IsEnable2Q() {
 			if _, ok := c.fifo.Get(key); !ok {
 				c.fifo.Push(key, value)
 			}
@@ -231,9 +219,7 @@ func (c *Cache[K, V]) Keys() []K {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	return c.OptionalCopyKeyN(
-		slices.Concat(c.lru.Keys(), c.visit.Keys()),
-	)
+	return c.OptionalCopyKeyN(c.lru.Keys())
 }
 
 // Values returns a slice of the values in the cache, from oldest to newest.
@@ -246,9 +232,7 @@ func (c *Cache[K, V]) Values() []V {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	return c.OptionalCopyValueN(
-		slices.Concat(c.lru.Values(), c.visit.Values()),
-	)
+	return c.OptionalCopyValueN(c.lru.Values())
 }
 
 // Clears all cache entries.
@@ -261,9 +245,6 @@ func (c *Cache[K, V]) Values() []V {
 func (c *Cache[K, V]) Clear() {
 	c.mux.Lock()
 	c.lru.Clear()
-	if c.IsUpgradeToLRUK() {
-		c.visit.Clear()
-	}
 	c.mux.Unlock()
 }
 
@@ -283,48 +264,66 @@ func (c *Cache[K, V]) Resize(size int) (evicted int) {
 
 var _ simplelru.LRUCache[any, any] = (*Cache[any, any])(nil)
 
-// VisitCacheCap returns the size of LFU cache.
-func (c *Cache[K, V]) VisitCacheCap() int {
+// VisitsCap returns the size of LFU cache.
+func (c *Cache[K, V]) VisitsCap() int {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
 	return c.visit.Cap()
 }
 
-// VisitCacheLen returns the number of items in the LFU cache.
-func (c *Cache[K, V]) VisitCacheLen() int {
+// VisitsLen returns the number of items in the LFU cache.
+func (c *Cache[K, V]) VisitsLen() int {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
 	return c.visit.Len()
 }
 
-// Resize changes the LFU cache size.
-func (c *Cache[K, V]) VisitCacheResize(size int) int {
+// VisitsResize changes the LFU cache size.
+func (c *Cache[K, V]) VisitsResize(size int) int {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
 	return c.visit.Resize(size)
 }
 
+// FIFOCap returns the size of fifo-list.
+func (c *Cache[K, V]) FIFOCap() int {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+
+	return c.fifo.Size()
+}
+
+// FIFOLen returns the number of items in the fifo-list
+func (c *Cache[K, V]) FIFOLen() int {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+
+	return c.fifo.Len()
+}
+
+// FIFOResize changes the fifo-list size.
+func (c *Cache[K, V]) FIFOResize(size int) int {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	return c.fifo.Resize(size)
+}
+
 // whether or not enable LRU-K algorithm
-func (c *Cache[K, V]) IsUpgradeToLRUK() bool {
+func (c *Cache[K, V]) IsEnableLRUK() bool {
 	return c.visitThreshold > 1
 }
 
 // whether or not enable 2Q algorithm
-func (c *Cache[K, V]) IsUpgradeTo2Q() bool {
+func (c *Cache[K, V]) IsEnable2Q() bool {
 	return c.fifo != nil && c.fifo.Size() > 0
 }
 
 func (c *Cache[K, V]) isExpectedVisits(visits uint64) bool {
 	return visits >= c.visitThreshold
-}
-
-func (c *Cache[K, V]) moveToLru(key K) {
-	if value, ok := c.visit.Remove(key); ok {
-		c.lru.Push(key, value)
-	}
 }
 
 type cacheOptionFunc[K comparable, V any] func(*Cache[K, V])

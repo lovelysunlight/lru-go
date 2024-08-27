@@ -49,6 +49,11 @@ func (l *FIFO[K, V]) Init() *FIFO[K, V] {
 	return l
 }
 
+func (l *FIFO[K, V]) Contains(key K) bool {
+	_, ok := l.items[key]
+	return ok
+}
+
 // Get returns the element with the given key from the list.
 func (l *FIFO[K, V]) Get(key K) (e *Entry[K, V], ok bool) {
 	e, ok = l.items[key]
@@ -107,4 +112,17 @@ func (l *FIFO[K, V]) delete(e *Entry[K, V]) {
 	e.next = nil // avoid memory leaks
 	e.prev = nil // avoid memory leaks
 	l.len--
+}
+
+// Resize changes the list size.
+func (c *FIFO[K, V]) Resize(size int) (evicted int) {
+	diff := c.Len() - size
+	if diff < 0 {
+		diff = 0
+	}
+	for i := 0; i < diff; i++ {
+		c.Pop()
+	}
+	c.size = size
+	return diff
 }

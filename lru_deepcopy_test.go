@@ -602,6 +602,7 @@ func TestCacheUpgradeToLRUK_enable_deepcopy_Values(t *testing.T) {
 		cache.Put("a", map[string]string{
 			"a": "a",
 		})
+		cache.Get("a")
 
 		v := cache.Values()
 		assert.EqualValues(t, []map[string]string{
@@ -617,7 +618,7 @@ func TestCacheUpgradeToLRUK_enable_deepcopy_Values(t *testing.T) {
 	t.Run("slice", func(t *testing.T) {
 		cache, _ := New[string, []int](2, EnableDeepCopy[string, []int](), EnableLRUK[string, []int](2))
 		cache.Put("a", []int{1, 2, 3})
-
+		cache.Get("a")
 		v := cache.Values()
 		assert.EqualValues(t, [][]int{{1, 2, 3}}, v)
 		v[0][0] = 4
@@ -631,7 +632,7 @@ func TestCacheUpgradeToLRUK_enable_deepcopy_Values(t *testing.T) {
 		}
 		cache, _ := New[string, *TestCase](2, EnableDeepCopy[string, *TestCase](), EnableLRUK[string, *TestCase](2))
 		cache.Put("a", &TestCase{Name: "a"})
-
+		cache.Get("a")
 		v := cache.Values()
 		assert.EqualValues(t, []*TestCase{{Name: "a"}}, v)
 		v[0].Name = "b"
@@ -647,6 +648,7 @@ func TestCacheUpgradeToLRUK_disable_deepcopy_Values(t *testing.T) {
 		cache.Put("a", map[string]string{
 			"a": "a",
 		})
+		cache.Get("a")
 
 		v := cache.Values()
 		assert.EqualValues(t, []map[string]string{
@@ -668,6 +670,7 @@ func TestCacheUpgradeToLRUK_disable_deepcopy_Values(t *testing.T) {
 	t.Run("slice", func(t *testing.T) {
 		cache, _ := New[string, []int](2, DisableDeepCopy[string, []int](), EnableLRUK[string, []int](2))
 		cache.Put("a", []int{1, 2, 3})
+		cache.Get("a")
 
 		v := cache.Values()
 		assert.EqualValues(t, [][]int{{1, 2, 3}}, v)
@@ -686,6 +689,7 @@ func TestCacheUpgradeToLRUK_disable_deepcopy_Values(t *testing.T) {
 		}
 		cache, _ := New[string, *TestCase](2, DisableDeepCopy[string, *TestCase](), EnableLRUK[string, *TestCase](2))
 		cache.Put("a", &TestCase{Name: "a"})
+		cache.Get("a")
 
 		v := cache.Values()
 		assert.EqualValues(t, []*TestCase{{Name: "a"}}, v)
@@ -706,7 +710,9 @@ func TestCacheUpgradeToLRUK_enable_deepcopy_Keys(t *testing.T) {
 			Name string
 		}
 		cache, _ := New[*TestCase, *TestCase](2, EnableDeepCopy[*TestCase, *TestCase](), EnableLRUK[*TestCase, *TestCase](2))
-		cache.Put(&TestCase{Name: "b"}, &TestCase{Name: "a"})
+		key := &TestCase{Name: "b"}
+		cache.Put(key, &TestCase{Name: "a"})
+		cache.Get(key)
 
 		v := cache.Keys()
 		assert.EqualValues(t, []*TestCase{{Name: "b"}}, v)
@@ -723,7 +729,9 @@ func TestCacheUpgradeToLRUK_disable_deepcopy_Keys(t *testing.T) {
 			Name string
 		}
 		cache, _ := New[*TestCase, *TestCase](2, DisableDeepCopy[*TestCase, *TestCase](), EnableLRUK[*TestCase, *TestCase](2))
-		cache.Put(&TestCase{Name: "b"}, &TestCase{Name: "a"})
+		key := &TestCase{Name: "b"}
+		cache.Put(key, &TestCase{Name: "a"})
+		cache.Get(key)
 
 		v := cache.Keys()
 		assert.EqualValues(t, []*TestCase{{Name: "b"}}, v)
